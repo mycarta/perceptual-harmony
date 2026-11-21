@@ -6,14 +6,25 @@ import sys
 
 from . import __version__
 from .check import check
-from .colour import SPACES
+from .colour import ROBUSTNESS_SPACES, SPACES
 from .harmony import TEMPLATES
+
+
+def _robustness_spaces(text: str):
+    if text.strip().lower() == 'none':
+        return ()
+    names = [t.strip() for t in text.split(',') if t.strip()]
+    for n in names:
+        if n.lower().replace('-', '') not in SPACES:
+            raise ValueError(f'unknown colour space {n!r} in --robustness; choose from {", ".join(SPACES)}')
+    return names
 
 
 def _cmd_check(args) -> int:
     report = check(args.colours, args.candidate, space=args.space, template=args.template,
                    rotation=args.rotation, background=args.background,
-                   neutral_chroma=args.neutral_chroma)
+                   neutral_chroma=args.neutral_chroma,
+                   robustness_spaces=_robustness_spaces(args.robustness))
     print(report.to_json() if args.json else report.to_text())
     if args.svg:
         from .svg import render_svg
@@ -52,6 +63,9 @@ def main(argv=None) -> int:
     c.add_argument('-b', '--background', help='background colour for WCAG 2 contrast ratios')
     c.add_argument('--neutral-chroma', type=float,
                    help='chroma below which a colour counts as neutral (default depends on space)')
+    c.add_argument('--robustness', metavar='SPACES', default=','.join(ROBUSTNESS_SPACES),
+                   help='comma-separated colour spaces in which to refit the template and compare '
+                        f'each verdict, or "none" (default: {",".join(ROBUSTNESS_SPACES)})')
     c.add_argument('--svg', metavar='PATH', help='also write a hue-wheel figure as SVG')
     c.add_argument('--title', help='title for the SVG figure')
     c.add_argument('--json', action='store_true', help='print the report as JSON')

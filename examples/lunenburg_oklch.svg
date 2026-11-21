@@ -167,24 +167,25 @@
 </g>
 <text x="320" y="618" fill="#57606a" font-size="12" text-anchor="middle">Radius: chroma C (outer grid circle = 0.162). Ring: L 75, C 0.128.</text>
 <text x="640" y="92" fill="#57606a" font-size="14">Palette fits. Sectors 258°–352°, 116°–134°.</text>
-<text x="640" y="140" fill="#1f2328" font-size="15" font-weight="600">Palette</text>
-<rect x="640" y="160.8" width="40" height="40" rx="6" fill="#4e7fcc" stroke="#d0d7de"/>
-<text x="694" y="176.0" fill="#1f2328" font-size="14" font-weight="600">sky-blue</text>
-<text x="694" y="194.0" fill="#57606a" font-size="12.5">#4e7fcc  L 60  C 0.130  h 259°  ·  inside by 0.9°  ·  3.8:1</text>
-<rect x="640" y="218.8" width="40" height="40" rx="6" fill="#6b9be8" stroke="#d0d7de"/>
-<text x="694" y="234.0" fill="#1f2328" font-size="14" font-weight="600">sky-light</text>
-<text x="694" y="252.0" fill="#57606a" font-size="12.5">#6b9be8  L 69  C 0.126  h 260°  ·  inside by 1.3°  ·  2.6:1</text>
-<rect x="640" y="276.8" width="40" height="40" rx="6" fill="#85bd5a" stroke="#d0d7de"/>
-<text x="694" y="292.0" fill="#1f2328" font-size="14" font-weight="600">green</text>
-<text x="694" y="310.0" fill="#57606a" font-size="12.5">#85bd5a  L 74  C 0.143  h 133°  ·  inside by 0.8°  ·  2.1:1</text>
-<rect x="640" y="334.8" width="40" height="40" rx="6" fill="#639326" stroke="#d0d7de"/>
-<text x="694" y="350.0" fill="#1f2328" font-size="14" font-weight="600">green-dark</text>
-<text x="694" y="368.0" fill="#57606a" font-size="12.5">#639326  L 61  C 0.146  h 131°  ·  inside by 3.4°  ·  3.5:1</text>
-<rect x="640" y="392.8" width="40" height="40" rx="6" fill="#6d366d" stroke="#d0d7de"/>
-<text x="694" y="408.0" fill="#1f2328" font-size="14" font-weight="600">magenta</text>
-<text x="694" y="426.0" fill="#57606a" font-size="12.5">#6d366d  L 43  C 0.109  h 327°  ·  inside by 24.5°  ·  8.3:1</text>
-<rect x="640" y="450.8" width="40" height="40" rx="6" fill="#b998dd" stroke="#d0d7de"/>
-<text x="694" y="466.0" fill="#1f2328" font-size="14" font-weight="600">lavender</text>
-<text x="694" y="484.0" fill="#57606a" font-size="12.5">#b998dd  L 73  C 0.104  h 306°  ·  inside by 45.9°  ·  2.3:1</text>
+<text x="640" y="112" fill="#57606a" font-size="14">Fits in 4 of 4 colour spaces; every colour keeps its verdict in all of them.</text>
+<text x="640" y="160" fill="#1f2328" font-size="15" font-weight="600">Palette</text>
+<rect x="640" y="180.8" width="40" height="40" rx="6" fill="#4e7fcc" stroke="#d0d7de"/>
+<text x="694" y="196.0" fill="#1f2328" font-size="14" font-weight="600">sky-blue</text>
+<text x="694" y="214.0" fill="#57606a" font-size="12.5">#4e7fcc  L 60  C 0.130  h 259°  ·  inside by 0.9°  ·  3.8:1</text>
+<rect x="640" y="238.8" width="40" height="40" rx="6" fill="#6b9be8" stroke="#d0d7de"/>
+<text x="694" y="254.0" fill="#1f2328" font-size="14" font-weight="600">sky-light</text>
+<text x="694" y="272.0" fill="#57606a" font-size="12.5">#6b9be8  L 69  C 0.126  h 260°  ·  inside by 1.3°  ·  2.6:1</text>
+<rect x="640" y="296.8" width="40" height="40" rx="6" fill="#85bd5a" stroke="#d0d7de"/>
+<text x="694" y="312.0" fill="#1f2328" font-size="14" font-weight="600">green</text>
+<text x="694" y="330.0" fill="#57606a" font-size="12.5">#85bd5a  L 74  C 0.143  h 133°  ·  inside by 0.8°  ·  2.1:1</text>
+<rect x="640" y="354.8" width="40" height="40" rx="6" fill="#639326" stroke="#d0d7de"/>
+<text x="694" y="370.0" fill="#1f2328" font-size="14" font-weight="600">green-dark</text>
+<text x="694" y="388.0" fill="#57606a" font-size="12.5">#639326  L 61  C 0.146  h 131°  ·  inside by 3.4°  ·  3.5:1</text>
+<rect x="640" y="412.8" width="40" height="40" rx="6" fill="#6d366d" stroke="#d0d7de"/>
+<text x="694" y="428.0" fill="#1f2328" font-size="14" font-weight="600">magenta</text>
+<text x="694" y="446.0" fill="#57606a" font-size="12.5">#6d366d  L 43  C 0.109  h 327°  ·  inside by 24.5°  ·  8.3:1</text>
+<rect x="640" y="470.8" width="40" height="40" rx="6" fill="#b998dd" stroke="#d0d7de"/>
+<text x="694" y="486.0" fill="#1f2328" font-size="14" font-weight="600">lavender</text>
+<text x="694" y="504.0" fill="#57606a" font-size="12.5">#b998dd  L 73  C 0.104  h 306°  ·  inside by 45.9°  ·  2.3:1</text>
 <text x="640" y="618" fill="#57606a" font-size="12">Contrast: WCAG 2 ratio against #faf8f5.</text>
 </svg>

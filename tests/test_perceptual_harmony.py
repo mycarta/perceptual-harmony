@@ -10,6 +10,7 @@ from perceptual_harmony import (SPACES, TEMPLATES, check, contrast_ratio, fit_te
 from perceptual_harmony.cli import main
 from perceptual_harmony.harmony import _evaluate, angle_diff
 
+ORIGINAL_SPACES = ('oklch', 'cielch', 'cam02ucs')   # the spaces the worked examples describe
 WINDMILL = ['board blue=#30859e', 'pale label=#c5d9e8', 'gold=#f5e642', 'hit red=#ef9a9a']
 
 
@@ -51,6 +52,14 @@ def test_cam02ucs_matches_colorspacious():
         ref = cs.cspace_convert(np.array(rgb), 'sRGB1', 'CAM02-UCS')
         # small residual from slightly different sRGB matrices
         assert SPACES['cam02ucs'].to_lab(rgb) == pytest.approx(tuple(ref), abs=0.02)
+
+
+def test_cam16ucs_and_ipt_reference_values():
+    # reference values from colour-science 0.4.4 (sRGB, D65, its default viewing conditions)
+    assert SPACES['cam16ucs'].to_lab((1, 0, 0)) == pytest.approx((59.1742, 40.8297, 21.1556), abs=0.02)
+    assert SPACES['cam16ucs'].to_lab((0.2, 0.5, 0.8)) == pytest.approx((54.5312, -6.5933, -25.9991), abs=0.02)
+    assert SPACES['ipt'].to_lab((1, 0, 0)) == pytest.approx((0.45611, 0.6211, 0.44291), abs=5e-4)
+    assert SPACES['ipt'].to_lab((0.2, 0.5, 0.8)) == pytest.approx((0.55489, -0.143, -0.33058), abs=5e-4)
 
 
 def test_contrast_ratio():
@@ -95,7 +104,7 @@ def test_fit_is_global_minimum(tname):
 
 
 # ---- check ------------------------------------------------------------------------------------
-@pytest.mark.parametrize('space', list(SPACES))
+@pytest.mark.parametrize('space', ORIGINAL_SPACES)
 def test_windmill_palette_fits_x(space):
     report = check(WINDMILL, space=space)
     assert report.chosen.template.name == 'X' and report.chosen.fits
@@ -104,7 +113,7 @@ def test_windmill_palette_fits_x(space):
 LUNENBURG = ['#4e7fcc', '#6b9be8', '#85bd5a', '#639326', '#6d366d', '#b998dd']
 
 
-@pytest.mark.parametrize('space', list(SPACES))
+@pytest.mark.parametrize('space', ORIGINAL_SPACES)
 def test_lunenburg_palette_is_harmonious(space):
     report = check(LUNENBURG, space=space)
     assert report.chosen.fits
@@ -113,7 +122,8 @@ def test_lunenburg_palette_is_harmonious(space):
 
 def test_harmony_depends_on_colour_space():
     """Periwinkle is inside Windmill's X template in OKLCH and CAM02-UCS, just outside in CIELCh."""
-    margins = {sp: check(WINDMILL, ['#94a0f0'], space=sp).candidates[0].margin for sp in SPACES}
+    margins = {sp: check(WINDMILL, ['#94a0f0'], space=sp).candidates[0].margin
+               for sp in ORIGINAL_SPACES}
     assert margins['oklch'] > 5 and margins['cam02ucs'] > 5
     assert -5 < margins['cielch'] < 0
 
@@ -138,6 +148,23 @@ def test_unknown_space_and_template():
         check(WINDMILL, template='Z')
 
 
+def test_robustness_flags_periwinkle_as_borderline():
+    report = check(WINDMILL, ['periwinkle=#94a0f0', 'sea green=#61d1ac', 'amber=#f0ac4c'])
+    assert [r.space.name for r in report.robustness] == ['oklch', 'cielch', 'cam16ucs', 'ipt']
+    assert report.fits_in == 4
+    peri, sea, amber = report.candidates
+    assert peri.robustness == 'borderline' and peri.inside_count == 3
+    assert sea.robustness == 'outside' and amber.robustness == 'inside'
+    assert peri.margins_by_space['oklch'] == pytest.approx(peri.margin)
+    assert 'Borderline' in report.to_text()
+
+
+def test_robustness_can_be_skipped_and_primary_comes_first():
+    assert check(WINDMILL, robustness_spaces=()).robustness == []
+    report = check(WINDMILL, space='cam02ucs', robustness_spaces=['oklch'])
+    assert [r.space.name for r in report.robustness] == ['cam02ucs', 'oklch']
+
+
 def test_background_contrast_and_nearest():
     report = check(WINDMILL, ['#94a0f0'], background='#1a2e3d')
     c = report.candidates[0]
@@ -158,8 +185,67 @@ def test_cli_json(capsys):
     assert data['candidates'][0]['label'] == 'periwinkle'
 
 
+def test_cli_robustness_option(capsys):
+    assert main(['check', *WINDMILL, '--robustness', 'none', '--json']) == 0
+    assert json.loads(capsys.readouterr().out)['robustness'] == []
+    assert main(['check', *WINDMILL, '--robustness', 'cielch,ipt', '--json']) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert [r['space'] for r in data['robustness']] == ['oklch', 'cielch', 'ipt']
+    with pytest.raises(SystemExit):
+        main(['check', *WINDMILL, '--robustness', 'hsl'])
+
+
 def test_cli_text_and_svg(tmp_path, capsys):
     out = tmp_path / 'w.svg'
     assert main(['check', *WINDMILL, '-s', 'cam02ucs', '--svg', str(out)]) == 0
     assert 'CAM02-UCS' in capsys.readouterr().out
     assert out.read_text().startswith('<svg')
+
+
+# ---- colormaps --------------------------------------------------------------------------------
+def _cubeyf(name='cubeyf'):
+    from pathlib import Path
+    path = Path(__file__).parent.parent / 'examples' / 'data' / f'{name}.csv'
+    rows = [l for l in path.read_text().splitlines() if l and not l.startswith('#')][1:]
+    return [tuple(float(v) for v in r.split(',')) for r in rows]
+
+
+def test_cubeyf_is_close_to_a_t_template():
+    """Niccoli (2013): cubeYF 'looks very close to a T template', 'exceeding a bit 180 degrees'."""
+    from perceptual_harmony import check_colormap
+    for space in ('oklch', 'cam02ucs'):
+        r = check_colormap(_cubeyf(), 'cubeYF', space, robustness_spaces=())
+        assert r.chosen.template.name == 'T' and r.chosen.cost < 2
+        assert 180 < r.hue_span < 215
+        assert r.lightness_reversal < r.space.jnd       # monotonic to within a fraction of a JND
+
+
+def test_cube1_trades_lightness_for_hue_range():
+    """Niccoli (2013): cube1 adds a red-like colour at the high-lightness end, at the cost of a
+    modest deviation from perceptual: wider hues than cubeYF, lightness falling after a peak."""
+    from perceptual_harmony import check_colormap
+    r = check_colormap(_cubeyf('cube1'), 'cube1', 'cielch', robustness_spaces=())
+    assert r.chosen.template.name == 'X'
+    assert 250 < r.hue_span < 290
+    assert 10 < r.lightness_reversal < 25
+    assert 'peak' in r.lightness_range_text()
+
+
+def test_colormap_robustness():
+    from perceptual_harmony import check_colormap
+    r = check_colormap(_cubeyf(), 'cubeYF', template='T')
+    assert [x.space.name for x in r.robustness] == ['cielch', 'cam16ucs', 'ipt']
+    assert all(x.chosen.template.name == 'T' and 195 < x.hue_span < 215 for x in r.robustness)
+    assert check_colormap(_cubeyf(), robustness_spaces=()).robustness == []
+
+
+def test_jet_lightness_is_not_monotonic():
+    from perceptual_harmony import check_colormap
+    jet = [(0, 0, 0.5), (0, 0, 1), (0, 1, 1), (1, 1, 0), (1, 0, 0), (0.5, 0, 0)]
+    r = check_colormap(jet, 'jet-ish', 'oklch', robustness_spaces=())
+    assert r.lightness_reversal > 0.3
+
+
+def test_colormap_svg_is_well_formed():
+    from perceptual_harmony import check_colormap, render_colormap_svg
+    ET.fromstring(render_colormap_svg(check_colormap(_cubeyf(), 'cubeYF', template='T')))

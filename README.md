@@ -6,8 +6,9 @@ It is meant for anyone choosing a small set of distinct colours that must work t
 palette of an app or a website, or the categories of a figure or map legend.
 
 The tool fits the harmonic hue templates of Cohen-Or et al. (2006) to a palette. The templates
-build on Matsuda's earlier work. Hue, lightness and chroma are measured in OKLCH, CIELCh or
-CAM02-UCS, not in HSL or HSV. For each colour the tool also reports lightness, chroma, its
+build on Matsuda's earlier work. Hue, lightness and chroma are measured in a perceptual colour
+space (OKLCH by default), not in HSL or HSV, and each verdict is checked in several spaces. For
+each colour the tool also reports lightness, chroma, its
 colour difference to the nearest palette colour and, optionally, its WCAG 2 contrast against a
 background. It can judge candidate colours against an existing palette, which is the usual
 question when a design or a figure needs one more colour.
@@ -26,8 +27,12 @@ eye. Perceptual spaces were built to make distances and angles track perception 
 
 They do not all agree, though, and the difference can change the answer. In the Windmill
 example below, the same candidate colour is 12° inside the template in OKLCH and 2° outside it
-in CIELCh. The tool therefore lets you choose the space and reports the margin in degrees, not
-just pass or fail.
+in CIELCh. No space is the correct one, so the tool reports the margin in degrees, not just pass
+or fail, and refits the template in several spaces. A colour that is inside in some and outside
+in others is reported as borderline.
+
+The templates are one model of harmony, and the report is information, not a rule. A colour
+outside a template, or borderline, may still be the right choice. The designer's eye decides.
 
 ## Install
 
@@ -50,11 +55,12 @@ Each `-c` adds a candidate to judge against the palette. Other options:
 
 | option | meaning |
 |---|---|
-| `-s`, `--space` | `oklch` (default), `cielch` or `cam02ucs` |
+| `-s`, `--space` | `oklch` (default), `cielch`, `cam02ucs`, `cam16ucs` or `ipt` |
 | `-t`, `--template` | judge against this template (`i V L I T Y X`) instead of the best-fitting one |
 | `-r`, `--rotation` | fix the template's rotation, in degrees (the centre of its first sector) |
 | `-b`, `--background` | add WCAG 2 contrast ratios against this colour |
 | `--neutral-chroma` | chroma below which a colour counts as neutral and is ignored by the fit |
+| `--robustness` | spaces in which to refit the template and compare verdicts, comma-separated, or `none` (default `oklch,cielch,cam16ucs,ipt`) |
 | `--svg PATH` | also write the hue-wheel figure |
 | `--json` | print the report as JSON |
 
@@ -72,9 +78,16 @@ report = check(['#30859e', '#c5d9e8', '#f5e642', '#ef9a9a'],
 report.chosen                 # best Fit: template, rotation, cost, sector ranges
 report.fits                   # every template, best first
 report.candidates[0].margin   # degrees inside (+) or outside (-) the template
+report.candidates[0].robustness   # 'inside', 'outside' or 'borderline' across spaces
+report.robustness             # the template refitted in each space
 print(report.to_text())
 open('wheel.svg', 'w').write(render_svg(report))
 ```
+
+For a continuous colormap, `check_colormap` takes the ordered samples (hex strings or sRGB
+triples in 0–1). It reports the template fit, the hue span and the largest fall in lightness.
+`render_colormap_svg` draws the samples as a path on the wheel, next to their lightness profile.
+Both report the same measures in the other spaces of the robustness check.
 
 ## Method
 
@@ -115,6 +128,23 @@ is 0.015 in OKLCH, 4 in CIELCh and 2.5 in CAM02-UCS.
 - **CAM02-UCS** (Luo, Cui & Li 2006), on CIECAM02. The viewing conditions match the defaults of
   the `colorspacious` package: adapting luminance 64/π/5 cd/m², background Y<sub>b</sub> = 20,
   average surround. The test suite checks the results against `colorspacious`.
+- **CAM16-UCS** (Li et al. 2017), on CAM16, the successor of CIECAM02, with the same viewing
+  conditions. The test suite checks reference values from `colour-science`.
+- **IPT** (Ebner & Fairchild 1998), designed for uniform hue. It has no published
+  just-noticeable difference. Its neutral threshold and rough JND are OKLCH's, scaled by the
+  typical ratio between the two spaces.
+
+**Robustness.** No colour space is the correct one for this. The spaces disagree on hue,
+especially in the blues. The templates' sector widths are fractions of a hue wheel, not
+measurements made in any of these spaces. A margin of a few degrees is therefore finer than the
+model can resolve. So the tool refits the chosen template in several spaces and reports each
+colour's margin in every one. By default it uses OKLCH, CIELCh, CAM16-UCS and IPT: one space from
+each design family, with CAM16-UCS standing in for CAM02-UCS. They were chosen for that reason,
+not for the results they give. A colour inside the template in every space is a robust fit; one
+that changes sides is borderline.
+
+OKLCH is the default primary space because it was designed for hue linearity, and because CSS
+writes colours as `oklch()`, which suits the intended audience.
 
 **Distinctness and contrast.** For each colour the tool reports the nearest palette colour and
 the Euclidean colour difference to it, in the chosen space. The report also gives a rough
@@ -136,7 +166,8 @@ The palette fits the X template in all three spaces. The blues fill one sector, 
 and the red fill the opposite one. The first candidate, cyan, falls among the blues and is too
 similar to them. Periwinkle sits near the far edge of the blue sector. It is clearly different,
 yet still inside the template in OKLCH (by 12°) and CAM02-UCS (by 19°). In CIELCh it is 2°
-outside, which is the space dependence described above.
+outside, which is the space dependence described above. The robustness check reports it as
+borderline: inside in three of four spaces. The palette itself fits X in all four.
 
 | OKLCH | CIELCh |
 |---|---|
@@ -161,6 +192,46 @@ fits in CIELCh and CAM02-UCS too. The blues sit only about 1° inside the edge o
 sector, so X gives the palette more room.
 
 ![Lunenburg event palette in OKLCH](examples/lunenburg_oklch.png)
+
+## Worked example: cubeYF and cube1, 2013 revisited
+
+[`examples/cubeyf.py`](examples/cubeyf.py) measures the hue spread of cubeYF, a perceptual
+rainbow colormap built in CIELAB with a monotonic lightness profile (see
+[Background](#background)). In 2013 its hue spread was judged by eye: it "looks very close to a
+T template rotated by 180 degrees", "also exceeding a bit 180 degrees". The tool now puts numbers
+on that.
+
+- In OKLCH and CAM02-UCS the best template is T, with a mean miss of about 1°. The hues span
+  201° and 206°: a little more than the 180° of T.
+- In CIELCh the hues span 209°, and X fits slightly better than T.
+- Across the four spaces of the robustness check, the hues span 201–209° and T misses by 1.0–2.6°
+  on average.
+- Lightness rises at every step except a fall of 0.12 L\* near the bright end, far below a
+  just-noticeable difference. In CIELAB it runs from L\* 30 to 89.
+
+The same post offered cube1 as an alternative with "a slightly superior visual hue contrast",
+"due to the addition of a red-like color at the high lightness end", "at the cost of a modest
+deviation from 100% perceptual". The numbers show the trade:
+
+- cube1's hues span 273° in OKLCH (269° in CIELCh), 60–70° more than cubeYF's. X fits best in
+  all three spaces; T misses by 6–8° on average. Across the four robustness spaces the span is
+  266–282°, so no space brings cube1 within T.
+- Lightness rises to a peak of L\* 89 at the yellow-green and then falls to 71 at the orange end. That
+  fall of 18 L\* is where cube1 departs from a monotonic profile.
+
+The same 2013 post also placed jet in a T template. jet's hues span 235° in OKLCH and do not fit
+T well; its lightness rises and falls by 58 points. For a colormap, harmony is a secondary
+property: the lightness profile comes first. So each figure shows both.
+
+| cubeYF | cube1 |
+|---|---|
+| ![cubeYF in OKLCH](examples/cubeyf_oklch.png) | ![cube1 in OKLCH](examples/cube1_oklch.png) |
+
+![jet in OKLCH](examples/jet_oklch.png)
+
+The cubeYF and cube1 samples in [`examples/data/cubeyf.csv`](examples/data/cubeyf.csv) and
+[`examples/data/cube1.csv`](examples/data/cube1.csv) are reused with permission. Please credit
+Matteo Niccoli and mycartablog.com.
 
 ## Background
 
@@ -194,6 +265,11 @@ notebook, in *The Leading Edge*'s Geophysical tutorial series:
   <https://bottosson.github.io/posts/oklab/>
 - Moroney, N., Fairchild, M. D., Hunt, R. W. G., Li, C., Luo, M. R., Newman, T. (2002).
   The CIECAM02 color appearance model. *Proc. IS&T/SID 10th Color Imaging Conference*, 23–27.
+- Li, C., Li, Z., Wang, Z., Xu, Y., Luo, M. R., Cui, G., Melgosa, M., Brill, M. H., Pointer, M.
+  (2017). Comprehensive color solutions: CAM16, CAT16, and CAM16-UCS. *Color Research &
+  Application* 42(6), 703–718.
+- Ebner, F., Fairchild, M. D. (1998). Development and testing of a color space (IPT) with
+  improved hue uniformity. *Proc. IS&T/SID 6th Color Imaging Conference*, 8–13.
 - Luo, M. R., Cui, G., Li, C. (2006). Uniform colour spaces based on CIECAM02 colour appearance
   model. *Color Research & Application* 31(4), 320–330.
 - W3C (2018). Web Content Accessibility Guidelines (WCAG) 2.1: contrast ratio.

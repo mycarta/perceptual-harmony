@@ -135,6 +135,36 @@ def cam02ucs_to_srgb(jab: Triple) -> Triple:
     return xyz_to_srgb(tuple(v / 100 for v in cam02.ucs_to_xyz100(*jab)))
 
 
+# ---- CAM16-UCS -------------------------------------------------------------------------------
+def srgb_to_cam16ucs(rgb: Triple) -> Triple:
+    return cam02.CAM16.xyz100_to_ucs(tuple(100 * v for v in srgb_to_xyz(rgb)))
+
+
+def cam16ucs_to_srgb(jab: Triple) -> Triple:
+    return xyz_to_srgb(tuple(v / 100 for v in cam02.CAM16.ucs_to_xyz100(*jab)))
+
+
+# ---- IPT (Ebner & Fairchild 1998) -------------------------------------------------------------
+_XYZ_TO_LMS_IPT = ((0.4002, 0.7075, -0.0807),
+                   (-0.2280, 1.1500, 0.0612),
+                   (0.0, 0.0, 0.9184))
+_LMS_TO_IPT = ((0.4000, 0.4000, 0.2000),
+               (4.4550, -4.8510, 0.3960),
+               (0.8056, 0.3572, -1.1628))
+_LMS_IPT_TO_XYZ = cam02._inv(_XYZ_TO_LMS_IPT)
+_IPT_TO_LMS = cam02._inv(_LMS_TO_IPT)
+
+
+def srgb_to_ipt(rgb: Triple) -> Triple:
+    lms = _mul(_XYZ_TO_LMS_IPT, srgb_to_xyz(rgb))
+    return _mul(_LMS_TO_IPT, tuple(math.copysign(abs(v) ** 0.43, v) for v in lms))
+
+
+def ipt_to_srgb(ipt: Triple) -> Triple:
+    lms = tuple(math.copysign(abs(v) ** (1 / 0.43), v) for v in _mul(_IPT_TO_LMS, ipt))
+    return xyz_to_srgb(_mul(_LMS_IPT_TO_XYZ, lms))
+
+
 # ---- the Space interface -----------------------------------------------------------------------
 @dataclass(frozen=True)
 class Space:
@@ -146,6 +176,7 @@ class Space:
     from_lab: Callable[[Triple], Triple]
     neutral_chroma: float      # below this chroma, hue is treated as undefined
     jnd: float                 # rough just-noticeable colour difference, for reporting
+    l_scale: float = 1.0       # multiply lightness by this to report it on a 0-100 scale
 
     def lch(self, rgb: Triple) -> Triple:
         L, a, b = self.to_lab(rgb)
@@ -174,15 +205,25 @@ class Space:
 
 SPACES: Dict[str, Space] = {
     'oklch': Space('oklch', 'OKLCH', ('L', 'C', 'h'), srgb_to_oklab, oklab_to_srgb,
-                   neutral_chroma=0.015, jnd=0.02),
+                   neutral_chroma=0.015, jnd=0.02, l_scale=100.0),
     'cielch': Space('cielch', 'CIELCh (D65)', ('L*', 'C*', 'h'), srgb_to_cielab, cielab_to_srgb,
                     neutral_chroma=4.0, jnd=2.3),
     'cam02ucs': Space('cam02ucs', 'CAM02-UCS', ("J'", "M'", 'h'), srgb_to_cam02ucs, cam02ucs_to_srgb,
                       neutral_chroma=2.5, jnd=1.0),
+    'cam16ucs': Space('cam16ucs', 'CAM16-UCS', ("J'", "M'", 'h'), srgb_to_cam16ucs, cam16ucs_to_srgb,
+                      neutral_chroma=2.5, jnd=1.0),
+    # IPT has no published JND; both thresholds are OKLCH's scaled by the median IPT/OKLab ratio
+    # of chroma (2.3) and of small colour differences (1.9) over random sRGB colours.
+    'ipt': Space('ipt', 'IPT', ('I', 'C', 'h'), srgb_to_ipt, ipt_to_srgb,
+                 neutral_chroma=0.035, jnd=0.04, l_scale=100.0),
 }
 
+# Spaces compared by default in the robustness check: one per design family, chosen for that
+# reason and not for the results they give. CAM16-UCS stands in for CAM02-UCS, which it supersedes.
+ROBUSTNESS_SPACES = ('oklch', 'cielch', 'cam16ucs', 'ipt')
+
 # chroma scale used to size plots: the largest chroma of any sRGB colour in each space
-SRGB_MAX_CHROMA = {'oklch': 0.323, 'cielch': 133.8, 'cam02ucs': 45.7}
+SRGB_MAX_CHROMA = {'oklch': 0.323, 'cielch': 133.8, 'cam02ucs': 45.7, 'cam16ucs': 46.0, 'ipt': 0.786}
 
 
 def get_space(name) -> Space:

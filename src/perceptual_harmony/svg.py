@@ -12,19 +12,18 @@ import math
 from html import escape
 from typing import Tuple
 
-from .check import ColourInfo, Report
-from .colour import Space, to_hex
+from .check import ColourInfo, ColormapReport, Report
+from .colour import SRGB_MAX_CHROMA, Space, to_hex
 
 INK, MUTED, GRID, SECTOR = '#1f2328', '#57606a', '#d0d7de', '#8c959f'
 
 
 def _even_ring(space: Space, steps: int = 72) -> Tuple[float, float]:
     """(lightness, chroma) giving the most colourful ring that is in gamut at every hue."""
-    scale = 1.0 if space.name == 'oklch' else 100.0
-    hi = 0.5 if space.name == 'oklch' else 200.0
+    hi = 2 * SRGB_MAX_CHROMA[space.name]
     best = (0.0, 0.0)
     for i in range(30, 91, 5):
-        L = i / 100 * scale
+        L = i / space.l_scale
         c = min(space.max_chroma(L, h * 360 / steps, hi) for h in range(steps))
         if c > best[1]:
             best = (L, c)
@@ -51,11 +50,33 @@ def _arc_path(r0: float, r1: float, h0: float, h1: float) -> str:
 
 
 def _fmt_c(space: Space, v: float) -> str:
-    return f'{v:.3f}' if space.name == 'oklch' else f'{v:.1f}'
+    return f'{v:.3f}' if space.l_scale != 1 else f'{v:.1f}'
 
 
 def _fmt_l(space: Space, v: float) -> str:
-    return f'{v * 100:.0f}' if space.name == 'oklch' else f'{v:.0f}'
+    return f'{v * space.l_scale:.0f}'
+
+
+def _wheel_base(g: list, sp: Space, fit, R: float, ring_in: float, plot_r: float):
+    """Append the even hue ring, chroma grid, hue ticks and template sectors; return the ring's L, C."""
+    L_ring, C_ring = _even_ring(sp)
+    for i in range(120):
+        h0 = i * 3
+        col = to_hex(sp.lch_to_srgb(L_ring, C_ring, h0 + 1.5))
+        g.append(f'<path d="{_arc_path(ring_in, R, h0, h0 + 3.3)}" fill="{col}"/>')
+    for f in (0.25, 0.5, 0.75, 1.0):
+        g.append(f'<circle r="{plot_r * f:.1f}" fill="none" stroke="{GRID}" stroke-width="1"/>')
+    for h in range(0, 360, 30):
+        x0, y0 = _pt(ring_in - 4, h)
+        x1, y1 = _pt(R + 10, h)
+        g.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="{MUTED}" stroke-width="1"/>')
+        tx, ty = _pt(R + 26, h)
+        g.append(f'<text x="{tx:.1f}" y="{ty:.1f}" fill="{MUTED}" font-size="12" text-anchor="middle" '
+                 f'dominant-baseline="central">{h}°</text>')
+    for a, b in fit.sector_ranges():
+        g.append(f'<path d="{_arc_path(0, ring_in, a, b)}" fill="{SECTOR}" fill-opacity="0.16" '
+                 f'stroke="{SECTOR}" stroke-width="1.5" stroke-dasharray="5 4"/>')
+    return L_ring, C_ring
 
 
 def render_svg(report: Report, title: str = '') -> str:
@@ -74,26 +95,7 @@ def render_svg(report: Report, title: str = '') -> str:
     out.append(f'<text x="28" y="40" fill="{INK}" font-size="22" font-weight="600">{escape(heading)}</text>')
 
     g = [f'<g transform="translate({cx},{cy})">']
-    # even ring
-    L_ring, C_ring = _even_ring(sp)
-    for i in range(120):
-        h0 = i * 3
-        col = to_hex(sp.lch_to_srgb(L_ring, C_ring, h0 + 1.5))
-        g.append(f'<path d="{_arc_path(ring_in, R, h0, h0 + 3.3)}" fill="{col}"/>')
-    # chroma grid and hue ticks
-    for f in (0.25, 0.5, 0.75, 1.0):
-        g.append(f'<circle r="{plot_r * f:.1f}" fill="none" stroke="{GRID}" stroke-width="1"/>')
-    for h in range(0, 360, 30):
-        x0, y0 = _pt(ring_in - 4, h)
-        x1, y1 = _pt(R + 10, h)
-        g.append(f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x1:.1f}" y2="{y1:.1f}" stroke="{MUTED}" stroke-width="1"/>')
-        tx, ty = _pt(R + 26, h)
-        g.append(f'<text x="{tx:.1f}" y="{ty:.1f}" fill="{MUTED}" font-size="12" text-anchor="middle" '
-                 f'dominant-baseline="central">{h}°</text>')
-    # template sectors
-    for a, b in fit.sector_ranges():
-        g.append(f'<path d="{_arc_path(0, ring_in, a, b)}" fill="{SECTOR}" fill-opacity="0.16" '
-                 f'stroke="{SECTOR}" stroke-width="1.5" stroke-dasharray="5 4"/>')
+    L_ring, C_ring = _wheel_base(g, sp, fit, R, ring_in, plot_r)
     # colours: markers first, then labels placed greedily to avoid markers and each other
     colours = report.palette + report.candidates
     pos = []
@@ -149,6 +151,14 @@ def render_svg(report: Report, title: str = '') -> str:
     status = 'fits' if fit.fits else f'misses by {fit.cost:.1f}° on average'
     out.append(f'<text x="{x0}" y="{y}" fill="{MUTED}" font-size="14">Palette {status}. '
                f'Sectors {escape(secs)}.</text>')
+    nrob = len(report.robustness)
+    if nrob > 1:
+        y += 20
+        nb = sum(c.robustness == 'borderline' for c in report.colours)
+        out.append(f'<text x="{x0}" y="{y}" fill="{MUTED}" font-size="14">Fits in {report.fits_in} of '
+                   f'{nrob} colour spaces; '
+                   + (f'{nb} borderline colour{"s" if nb > 1 else ""} (marked).' if nb else
+                      'every colour keeps its verdict in all of them.') + '</text>')
     y += 34
     rows = [('Palette', report.palette), ('Candidates', report.candidates)]
     n = sum(len(r) for _, r in rows) + sum(1 for _, r in rows if r)
@@ -168,8 +178,11 @@ def render_svg(report: Report, title: str = '') -> str:
                       f'{hn} {c.hue:.0f}°  ·  {where}')
             if c.contrast is not None:
                 detail += f'  ·  {c.contrast:.1f}:1'
+            name = c.label
+            if c.robustness == 'borderline':
+                name += f'  (borderline: inside in {c.inside_count} of {nrob} spaces)'
             out.append(f'<text x="{x0 + sw + 14}" y="{y + sw * 0.38:.1f}" fill="{INK}" font-size="14" '
-                       f'font-weight="600">{escape(c.label)}</text>')
+                       f'font-weight="600">{escape(name)}</text>')
             out.append(f'<text x="{x0 + sw + 14}" y="{y + sw * 0.38 + 18:.1f}" fill="{MUTED}" '
                        f'font-size="12.5">{escape(detail)}</text>')
             y += step
@@ -177,5 +190,86 @@ def render_svg(report: Report, title: str = '') -> str:
     if report.background:
         out.append(f'<text x="{x0}" y="{H - 22}" fill="{MUTED}" font-size="12">Contrast: WCAG 2 ratio '
                    f'against {report.background}.</text>')
+    out.append('</svg>')
+    return '\n'.join(out)
+
+
+def render_colormap_svg(report: ColormapReport, title: str = '') -> str:
+    """A colormap's samples as a path on the chroma-hue wheel, beside its lightness profile."""
+    sp = report.space
+    fit = report.chosen
+    W, H = 1180, 640
+    cx, cy, R = 320, 330, 230
+    ring_in, plot_r = R * 0.9, R * 0.84
+    cmax = max(C for _, C, _ in report.lch) / 0.9
+    scale = sp.l_scale
+    Ln, Cn, _ = sp.axis_names
+
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
+           f'font-family="-apple-system, \'Segoe UI\', Helvetica, Arial, sans-serif">',
+           f'<rect width="{W}" height="{H}" fill="#ffffff"/>']
+    heading = title or f'{report.name or "Colormap"}: {fit.template.name} template in {sp.label}'
+    out.append(f'<text x="28" y="40" fill="{INK}" font-size="22" font-weight="600">{escape(heading)}</text>')
+
+    # wheel with the colormap path
+    g = [f'<g transform="translate({cx},{cy})">']
+    L_ring, C_ring = _wheel_base(g, sp, fit, R, ring_in, plot_r)
+    pts = [_pt(plot_r * min(C / cmax, 1.0), h) for _, C, h in report.lch]
+    g.append('<polyline points="' + ' '.join(f'{x:.1f},{y:.1f}' for x, y in pts) +
+             f'" fill="none" stroke="{MUTED}" stroke-width="1" stroke-opacity="0.6"/>')
+    for (x, y), hx in zip(pts, report.hexes):
+        g.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="{hx}"/>')
+    for (x, y), hx, label in ((pts[0], report.hexes[0], 'start'), (pts[-1], report.hexes[-1], 'end')):
+        g.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="7" fill="{hx}" stroke="{INK}" stroke-width="1.5"/>')
+        g.append(f'<text x="{x + 11:.1f}" y="{y:.1f}" fill="{INK}" font-size="13" dominant-baseline="central" '
+                 f'paint-order="stroke" stroke="#ffffff" stroke-width="3">{label}</text>')
+    g.append('</g>')
+    out += g
+    out.append(f'<text x="{cx}" y="{H - 22}" fill="{MUTED}" font-size="12" text-anchor="middle">'
+               f'Radius: chroma {Cn} (outer grid circle = {_fmt_c(sp, cmax)}). '
+               f'Ring: {Ln} {_fmt_l(sp, L_ring)}, {Cn} {_fmt_c(sp, C_ring)}.</text>')
+
+    # lightness profile
+    px0, px1, py0, py1 = 690, 1130, 110, 380          # plot box
+    out.append(f'<text x="{px0 - 50}" y="{py0 - 22}" fill="{INK}" font-size="15" font-weight="600">'
+               f'Lightness {Ln} along the colormap</text>')
+    for v in range(0, 101, 20):
+        y = py1 - (py1 - py0) * v / 100
+        out.append(f'<line x1="{px0}" y1="{y:.1f}" x2="{px1}" y2="{y:.1f}" stroke="{GRID}" stroke-width="1"/>')
+        out.append(f'<text x="{px0 - 8}" y="{y:.1f}" fill="{MUTED}" font-size="12" text-anchor="end" '
+                   f'dominant-baseline="central">{v}</text>')
+    n = len(report.lch)
+    lp = [(px0 + (px1 - px0) * i / (n - 1), py1 - (py1 - py0) * min(max(L * scale, 0), 100) / 100)
+          for i, (L, _, _) in enumerate(report.lch)]
+    for (x, y), hx in zip(lp, report.hexes):
+        out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.6" fill="{hx}"/>')
+    # colour bar
+    bw = (px1 - px0) / n
+    for i, hx in enumerate(report.hexes):
+        out.append(f'<rect x="{px0 + i * bw:.2f}" y="{py1 + 14}" width="{bw + 0.6:.2f}" height="22" fill="{hx}"/>')
+    out.append(f'<text x="{px0}" y="{py1 + 54}" fill="{MUTED}" font-size="12">start</text>')
+    out.append(f'<text x="{px1}" y="{py1 + 54}" fill="{MUTED}" font-size="12" text-anchor="end">end</text>')
+
+    # summary
+    rev = report.lightness_reversal * scale
+    wm = report.worst_margin
+    lines = [
+        (f'Best template: {fit.template.name}' if fit.template is report.fits[0].template else
+         f'Template: {fit.template.name} (best fit: {report.fits[0].template.name})')
+        + f'. Mean miss {fit.cost:.1f}°. Sectors '
+        + ', '.join(f'{a:.0f}°–{b:.0f}°' for a, b in fit.sector_ranges()) + '.',
+        f'Hue span {report.hue_span:.0f}°; worst sample {abs(wm):.1f}° '
+        f'{"inside" if wm >= 0 else "outside"} the template.',
+        f'{Ln} {report.lightness_range_text(0)}; largest reversal {rev:.2f} '
+        f'({"none" if rev == 0 else ("below" if rev < sp.jnd * scale else "above") + " a just-noticeable difference"}).',
+    ]
+    if report.robustness:
+        allr = [report] + report.robustness
+        spans = [r.hue_span for r in allr]
+        costs = [r.chosen.cost for r in allr]
+        lines.append(f'Across {len(allr)} colour spaces: hue span {min(spans):.0f}°–{max(spans):.0f}°, '
+                     f'{fit.template.name} mean miss {min(costs):.1f}°–{max(costs):.1f}°.')
+    for i, line in enumerate(lines):
+        out.append(f'<text x="{px0 - 50}" y="{py1 + 100 + i * 24}" fill="{INK}" font-size="14">{escape(line)}</text>')
     out.append('</svg>')
     return '\n'.join(out)
