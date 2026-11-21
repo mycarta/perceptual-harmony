@@ -50,15 +50,28 @@ perceptual-harmony check 'board blue=#30859e' 'pale label=#c5d9e8' 'gold=#f5e642
     --background '#1a2e3d' --space oklch --svg wheel.svg
 ```
 
-Colours are hex codes, optionally labelled as `label=#hex`. Palette colours are positional.
-Each `-c` adds a candidate to judge against the palette. Other options:
+Colours are any CSS colour: hex, `rgb()`, `hsl()`, `hwb()`, `oklch()`, `oklab()`, `lab()`,
+`lch()` or a named colour. Each can be labelled, as in `label=#hex` or `'accent=oklch(70% 0.12 250)'`.
+Palette colours are positional. Each `-c` adds a candidate to judge against the palette.
+
+A website's palette usually lives in its style sheet as custom properties. `--css` reads every
+custom property whose value is a single colour; `-b` and `-c` then also accept property names:
+
+```sh
+perceptual-harmony check --css style.css --exclude 'ink*,paper*' -b paper -c 'new=oklch(70% 0.1 200)'
+```
+
+`var()` references are resolved. If a property is defined twice, for example again for a dark
+theme, the first definition is used. Other options:
 
 | option | meaning |
 |---|---|
 | `-s`, `--space` | `oklch` (default), `cielch`, `cam02ucs`, `cam16ucs` or `ipt` |
 | `-t`, `--template` | judge against this template (`i V L I T Y X`) instead of the best-fitting one |
 | `-r`, `--rotation` | fix the template's rotation, in degrees (the centre of its first sector) |
-| `-b`, `--background` | add WCAG 2 contrast ratios against this colour |
+| `--css FILE` | read the palette from the colour custom properties of a style sheet |
+| `--only`, `--exclude` | with `--css`: keep or drop properties by name, comma-separated, wildcards allowed |
+| `-b`, `--background` | add WCAG 2 contrast ratios against this colour (with `--css`, may be a property name) |
 | `--neutral-chroma` | chroma below which a colour counts as neutral and is ignored by the fit |
 | `--robustness` | spaces in which to refit the template and compare verdicts, comma-separated, or `none` (default `oklch,cielch,cam16ucs,ipt`) |
 | `--svg PATH` | also write the hue-wheel figure |
@@ -186,6 +199,14 @@ were picked from the page banner, a watercolour of a Lunenburg house:
 
 The watercolour's colours were chosen by eye while painting. The real house is blue, white and
 grey.
+
+The script reads the colours straight from the site's style sheet
+([`examples/data/lunenburg.css`](examples/data/lunenburg.css)), leaving out the ink and paper
+neutrals. On the command line:
+
+```sh
+perceptual-harmony check --css examples/data/lunenburg.css --exclude 'ink*,paper*' -b paper
+```
 
 The palette is harmonious. In OKLCH it fits the Y template exactly: the greens fill the narrow
 sector, and the blues, magenta and lavender fill the wide one. It also fits X exactly, and it

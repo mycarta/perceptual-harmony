@@ -6,6 +6,7 @@ import sys
 
 from . import __version__
 from .check import check
+from .css import css_colours, custom_properties, lookup
 from .colour import ROBUSTNESS_SPACES, SPACES
 from .harmony import TEMPLATES
 
@@ -20,11 +21,37 @@ def _robustness_spaces(text: str):
     return names
 
 
+def _patterns(text):
+    return [t.strip() for t in (text or '').split(',') if t.strip()]
+
+
+def _spec(text: str, props) -> str:
+    """'label=colour', 'colour' or a custom-property name -> 'label=#rrggbb'."""
+    label, value = text.split('=', 1) if '=' in text else ('', text)
+    hx = lookup(value, props)
+    name = value.strip().lstrip('-')
+    if not label and props and name in props:
+        label = name
+    return f'{label.strip() or hx}={hx}'
+
+
 def _cmd_check(args) -> int:
-    report = check(args.colours, args.candidate, space=args.space, template=args.template,
-                   rotation=args.rotation, background=args.background,
+    props, palette, notes = {}, [], []
+    if args.css:
+        with open(args.css, encoding='utf-8') as f:
+            text = f.read()
+        props = custom_properties(text)
+        found, notes = css_colours(text, _patterns(args.only), _patterns(args.exclude))
+        palette = [f'{n}={hx}' for n, hx in found]
+    palette += [_spec(c, props) for c in args.colours]
+    if not palette:
+        raise ValueError('no palette colours: give colours, or --css with colour custom properties')
+    report = check(palette, [_spec(c, props) for c in args.candidate], space=args.space,
+                   template=args.template, rotation=args.rotation,
+                   background=lookup(args.background, props) if args.background else None,
                    neutral_chroma=args.neutral_chroma,
                    robustness_spaces=_robustness_spaces(args.robustness))
+    report.notes += notes
     print(report.to_json() if args.json else report.to_text())
     if args.svg:
         from .svg import render_svg
@@ -50,8 +77,16 @@ def main(argv=None) -> int:
     sub = p.add_subparsers(dest='command', required=True)
 
     c = sub.add_parser('check', help='fit the hue templates to a palette and judge candidate colours',
-                       description='Colours are hex codes, optionally labelled: "gold=#f5e642".')
-    c.add_argument('colours', nargs='+', help='palette colours')
+                       description='Colours are CSS colours (hex, rgb(), hsl(), oklch(), names ...), '
+                                   'optionally labelled: "gold=#f5e642".')
+    c.add_argument('colours', nargs='*', help='palette colours (added after any read with --css)')
+    c.add_argument('--css', metavar='FILE',
+                   help='read the palette from the colour custom properties (--name: colour) of a '
+                        'style sheet; -b and -c then also accept property names')
+    c.add_argument('--only', metavar='NAMES',
+                   help='with --css: keep only these properties (comma-separated, wildcards allowed)')
+    c.add_argument('--exclude', metavar='NAMES',
+                   help='with --css: leave out these properties, e.g. "ink*,paper*"')
     c.add_argument('-c', '--candidate', action='append', default=[],
                    help='a candidate colour to judge against the palette (repeatable)')
     c.add_argument('-s', '--space', default='oklch', choices=list(SPACES),
@@ -60,7 +95,9 @@ def main(argv=None) -> int:
                    help='judge against this template instead of the best-fitting one')
     c.add_argument('-r', '--rotation', type=float,
                    help='fix the template rotation (centre of its first sector, degrees)')
-    c.add_argument('-b', '--background', help='background colour for WCAG 2 contrast ratios')
+    c.add_argument('-b', '--background',
+                   help='background colour for WCAG 2 contrast ratios (a colour or, with --css, a '
+                        'property name)')
     c.add_argument('--neutral-chroma', type=float,
                    help='chroma below which a colour counts as neutral (default depends on space)')
     c.add_argument('--robustness', metavar='SPACES', default=','.join(ROBUSTNESS_SPACES),

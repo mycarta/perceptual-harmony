@@ -172,6 +172,65 @@ def test_background_contrast_and_nearest():
     assert c.nearest in {p.label for p in report.palette}
 
 
+# ---- CSS --------------------------------------------------------------------------------------
+@pytest.mark.parametrize('value', ['#4e7fcc', '#4E7FCC80', 'rgb(78 127 204)', 'rgb(78, 127, 204, .5)',
+                                   'rgba(78,127,204,0.2)', 'oklch(59.8% 0.1302 259.1)',
+                                   'oklch(0.598 0.1302 259.1 / 40%)', 'oklab(0.598 -0.0247 -0.1278)'])
+def test_css_colour_syntaxes(value):
+    from perceptual_harmony import parse_colour
+    r, g, b = parse_hex(parse_colour(value))
+    assert (r, g, b) == pytest.approx(parse_hex('#4e7fcc'), abs=1.5 / 255)
+
+
+def test_css_named_hsl_hwb_lab():
+    from perceptual_harmony import parse_colour
+    assert parse_colour('RebeccaPurple') == '#663399'
+    assert parse_colour('hsl(120 100% 25%)') == '#008000'
+    assert parse_colour('hsl(0.5turn, 100%, 50%)') == '#00ffff'
+    assert parse_colour('hwb(0 0% 0%)') == '#ff0000'
+    assert parse_colour('lab(100 0 0)') == '#ffffff'
+    with pytest.raises(ValueError):
+        parse_colour('color-mix(in oklch, red, blue)')
+
+
+CSS = '''
+:root {
+  /* palette */
+  --sky: #4E7FCC; --leaf: rgb(133 189 90);
+  --accent: var(--sky);
+  --missing: var(--nope, oklch(70% 0.1 30));
+  --ink: #1b2024;
+  --font: "Lora", serif; --radius: 10px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .1);
+}
+@media (prefers-color-scheme: dark) { :root { --sky: #000080; } }
+'''
+
+
+def test_css_custom_properties():
+    from perceptual_harmony import css_colours
+    found, notes = css_colours(CSS)
+    names = [n for n, _ in found]
+    assert names == ['sky', 'leaf', 'accent', 'missing', 'ink']    # fonts, lengths, shadows skipped
+    assert dict(found)['sky'] == '#4e7fcc' == dict(found)['accent']  # first definition wins; var() resolved
+    assert [n for n, _ in css_colours(CSS, exclude=['ink', '--miss*'])[0]] == ['sky', 'leaf', 'accent']
+    assert [n for n, _ in css_colours(CSS, only=['s*', 'leaf'])[0]] == ['sky', 'leaf']
+    assert 'clipped' in css_colours(':root { --x: oklch(70% 0.4 150); }')[1][0]
+
+
+def test_cli_css(tmp_path, capsys):
+    f = tmp_path / 'style.css'
+    f.write_text(CSS)
+    assert main(['check', '--css', str(f), '--exclude', 'ink,accent,missing', '-b', 'ink',
+                 '-c', 'leaf', '-c', 'x=tomato', '--json']) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert [c['label'] for c in data['palette']] == ['sky', 'leaf']
+    assert [c['label'] for c in data['candidates']] == ['leaf', 'x']
+    assert data['background'] == '#1b2024'
+    with pytest.raises(SystemExit):
+        main(['check'])                     # no colours at all
+
+
 # ---- outputs ----------------------------------------------------------------------------------
 def test_svg_is_well_formed():
     report = check(WINDMILL + ['a & b=#000000'], ['#94a0f0'], background='#1a2e3d')

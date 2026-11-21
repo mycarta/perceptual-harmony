@@ -7,6 +7,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from .colour import (ROBUSTNESS_SPACES, Space, Triple, get_space, parse_hex, relative_luminance,
                      to_hex)
+from .css import parse_colour
 from .harmony import Fit, Template, fit_all, fit_template, get_template, margin
 
 ColourSpec = Union[str, Tuple[str, str]]
@@ -19,14 +20,15 @@ def contrast_ratio(rgb1: Triple, rgb2: Triple) -> float:
 
 
 def parse_spec(spec: ColourSpec) -> Tuple[str, str]:
-    """'#30859e', 'blue=#30859e' or ('blue', '#30859e') -> (label, normalised hex)."""
+    """'#30859e', 'blue=#30859e' or ('blue', '#30859e') -> (label, normalised hex). The colour may
+    be any CSS colour: 'accent=oklch(70% 0.12 250)', 'rgb(78 127 204)', 'tomato'."""
     if isinstance(spec, tuple):
         label, hx = spec
     elif '=' in spec:
         label, hx = spec.split('=', 1)
     else:
         label, hx = '', spec
-    hx = to_hex(parse_hex(hx))
+    hx = parse_colour(hx)
     return (label.strip() or hx), hx
 
 
@@ -238,7 +240,7 @@ def check(palette: Iterable[ColourSpec], candidates: Iterable[ColourSpec] = (),
             near = min(others, key=lambda p: sp.delta_e(c.rgb, p.rgb))
             c.nearest, c.delta_e = near.label, sp.delta_e(c.rgb, near.rgb)
         if background:
-            c.contrast = contrast_ratio(c.rgb, parse_hex(background))
+            c.contrast = contrast_ratio(c.rgb, parse_hex(parse_colour(background)))
 
     robustness = []
     if robustness_spaces:
@@ -267,7 +269,7 @@ def check(palette: Iterable[ColourSpec], candidates: Iterable[ColourSpec] = (),
     neutrals = [c.label for c in pal if c.neutral]
     if neutrals:
         notes.append(f'Neutral (ignored by the hue fit): {", ".join(neutrals)}.')
-    return Report(sp, pal, cands, fits, chosen, to_hex(parse_hex(background)) if background else None,
+    return Report(sp, pal, cands, fits, chosen, parse_colour(background) if background else None,
                   notes, robustness)
 
 
@@ -367,7 +369,7 @@ def check_colormap(colours: Sequence, name: str = '', space='oklch',
                    robustness_spaces: Sequence = ROBUSTNESS_SPACES) -> ColormapReport:
     """Fit the hue templates to a colormap and measure its hue span and lightness profile.
 
-    colours: ordered samples, as hex strings or sRGB triples in 0-1.
+    colours: ordered samples, as CSS colour strings (e.g. hex) or sRGB triples in 0-1.
     Hues are pooled into bins of `bin_width` degrees (weights summed) before fitting, which keeps
     the fit fast for long colormaps; the result is within half a bin of the unbinned fit.
     robustness_spaces: also refit the chosen template in these spaces, with their default neutral
@@ -375,7 +377,7 @@ def check_colormap(colours: Sequence, name: str = '', space='oklch',
     """
     sp = get_space(space)
     thresh = sp.neutral_chroma if neutral_chroma is None else neutral_chroma
-    rgbs = [parse_hex(c) if isinstance(c, str) else tuple(c) for c in colours]
+    rgbs = [parse_hex(parse_colour(c)) if isinstance(c, str) else tuple(c) for c in colours]
     if len(rgbs) < 2:
         raise ValueError('a colormap needs at least two samples')
     lch = [sp.lch(c) for c in rgbs]

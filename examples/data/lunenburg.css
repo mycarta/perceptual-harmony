@@ -1,0 +1,30 @@
+/* The :root block of style.css of lunenburg.fingerpost.ca (the Lunapp project), by Matteo Niccoli. */
+
+:root {
+  /* Primary — from the watercolor sky */
+  --sky-blue: #4E7FCC;
+  --sky-light: #6B9BE8;
+
+  /* Accent — from the vivid green clapboard */
+  --green: #85BD5A;
+  --green-dark: #639326;
+
+  /* Accent — from the magenta/purple tower */
+  --magenta: #6D366D;
+  --lavender: #B998DD;
+
+  /* Neutrals — from the ink linework */
+  --ink: #1B2024;
+  --ink-soft: #2E2B39;
+
+  /* Background — warm watercolor paper */
+  --paper: #FAF8F5;
+  --paper-dark: #F0EDE8;
+
+  /* Type */
+  --font-serif: "Playfair Display", "Lora", Georgia, "Times New Roman", serif;
+  --font-sans: "Source Sans 3", "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius: 10px;
+  --shadow-soft: 0 1px 2px rgba(27, 32, 36, 0.06), 0 4px 12px rgba(27, 32, 36, 0.05);
+}

@@ -3,27 +3,26 @@
 The site's colours were picked from a watercolour of a Lunenburg house, which is the page
 banner: two blues from the sky, two greens from the clapboard and a magenta and a lavender from
 the tower. This script checks that the picked palette is harmonious and writes a figure next to
-this file (and a narrow one in blog/). The colours are the CSS custom properties of the site's
-style sheet.
+this file (and a narrow one in blog/). The colours are read from the CSS custom properties of the
+site's style sheet, as the command line does with --css.
 
     python examples/lunenburg.py
 """
 from pathlib import Path
 
-from perceptual_harmony import check, render_svg
+from perceptual_harmony import check, css_colours, custom_properties, parse_colour, render_svg
 
-PALETTE = [
-    'sky-blue=#4e7fcc',     # music badges, links, header
-    'sky-light=#6b9be8',    # header gradient
-    'green=#85bd5a',        # festival badges, card edge
-    'green-dark=#639326',   # social and community badges
-    'magenta=#6d366d',      # theatre and dance badges
-    'lavender=#b998dd',     # arts badges
-]
-BACKGROUND = '#faf8f5'      # warm watercolour paper
-
+# data/lunenburg.css is the :root block of the site's style sheet. The colour roles:
+#   sky-blue    music badges, links, header      sky-light  header gradient
+#   green       festival badges, card edge       green-dark social and community badges
+#   magenta     theatre and dance badges         lavender   arts badges
+# ink* and paper* are the neutrals of text and background, left out of the palette.
 here = Path(__file__).parent
-report = check(PALETTE, space='oklch', background=BACKGROUND)
+css = (here / 'data' / 'lunenburg.css').read_text()
+palette, notes = css_colours(css, exclude=['ink*', 'paper*'])
+background = parse_colour(custom_properties(css)['paper'])     # warm watercolour paper
+
+report = check([f'{name}={hx}' for name, hx in palette], space='oklch', background=background)
 print(report.to_text())
 title = f'Lunenburg event palette: {report.chosen.template.name} template in {report.space.label}'
 for out, layout in ((here / 'lunenburg_oklch.svg', 'wide'), (here / 'blog' / 'lunenburg.svg', 'narrow')):
