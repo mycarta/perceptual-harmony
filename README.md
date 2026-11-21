@@ -2,12 +2,15 @@
 
 Check whether the colours of a palette are harmonious, measured in a perceptual colour space.
 
+It is meant for anyone choosing a small set of distinct colours that must work together: the
+palette of an app or a website, or the categories of a figure or map legend.
+
 The tool fits the harmonic hue templates of Cohen-Or et al. (2006) to a palette. The templates
 build on Matsuda's earlier work. Hue, lightness and chroma are measured in OKLCH, CIELCh or
 CAM02-UCS, not in HSL or HSV. For each colour the tool also reports lightness, chroma, its
 colour difference to the nearest palette colour and, optionally, its WCAG 2 contrast against a
 background. It can judge candidate colours against an existing palette, which is the usual
-question when a figure needs one more colour.
+question when a design or a figure needs one more colour.
 
 The library uses only the Python standard library (Python 3.9 or newer).
 
