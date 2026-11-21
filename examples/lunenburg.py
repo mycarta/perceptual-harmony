@@ -3,7 +3,8 @@
 The site's colours were picked from a watercolour of a Lunenburg house, which is the page
 banner: two blues from the sky, two greens from the clapboard and a magenta and a lavender from
 the tower. This script checks that the picked palette is harmonious and writes a figure next to
-this file. The colours are the CSS custom properties of the site's style sheet.
+this file (and a narrow one in blog/). The colours are the CSS custom properties of the site's
+style sheet.
 
     python examples/lunenburg.py
 """
@@ -24,7 +25,7 @@ BACKGROUND = '#faf8f5'      # warm watercolour paper
 here = Path(__file__).parent
 report = check(PALETTE, space='oklch', background=BACKGROUND)
 print(report.to_text())
-out = here / 'lunenburg_oklch.svg'
-out.write_text(render_svg(report, title=f'Lunenburg event palette: {report.chosen.template.name} '
-                                        f'template in {report.space.label}'))
-print('\nwrote', out)
+title = f'Lunenburg event palette: {report.chosen.template.name} template in {report.space.label}'
+for out, layout in ((here / 'lunenburg_oklch.svg', 'wide'), (here / 'blog' / 'lunenburg.svg', 'narrow')):
+    out.write_text(render_svg(report, title=title, layout=layout))
+    print('wrote', out)

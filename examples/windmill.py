@@ -3,7 +3,7 @@
 Windmill's replay compass needed a colour for 8 added wind directions: clearly different from
 the ocean blues already on screen, yet harmonious with them. This script fits the hue templates
 to the palette and judges four candidates, in OKLCH and in CIELCh, and writes one figure per
-space next to this file.
+space next to this file, plus a narrow figure of the palette and periwinkle in blog/.
 
     python examples/windmill.py
 """
@@ -33,3 +33,10 @@ for space in ('oklch', 'cielch'):
     out.write_text(render_svg(report, title=f'Windmill palette: {report.chosen.template.name} '
                                             f'template in {report.space.label}'))
     print('wrote', out, end='\n\n')
+
+# narrow figure for a blog column: the palette and the colour Windmill chose
+report = check(PALETTE, ['periwinkle=#94a0f0'], space='oklch', background=BACKGROUND)
+out = here / 'blog' / 'windmill.svg'
+out.write_text(render_svg(report, title='Windmill palette and periwinkle: '
+                                        f'{report.chosen.template.name} template in OKLCH', layout='narrow'))
+print('wrote', out)

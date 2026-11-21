@@ -79,11 +79,28 @@ def _wheel_base(g: list, sp: Space, fit, R: float, ring_in: float, plot_r: float
     return L_ring, C_ring
 
 
-def render_svg(report: Report, title: str = '') -> str:
+def _narrow(layout: str) -> bool:
+    if layout not in ('wide', 'narrow'):
+        raise ValueError(f"layout must be 'wide' or 'narrow', not {layout!r}")
+    return layout == 'narrow'
+
+
+def render_svg(report: Report, title: str = '', layout: str = 'wide') -> str:
+    """Hue wheel of a palette check. layout='wide' (1180 px, panel beside the wheel) or 'narrow'
+    (640 px wide, panel below the wheel, for a blog or document column)."""
+    narrow = _narrow(layout)
     sp = report.space
     fit = report.chosen
     W, H = 1180, 640
     cx, cy, R = 320, 330, 230            # wheel centre and ring outer radius
+    rows = [('Palette', report.palette), ('Candidates', report.candidates)]
+    n_rows = sum(len(r) for _, r in rows) + sum(1 for _, r in rows if r)
+    if narrow:
+        W, cy = 640, 380
+        step = 52
+        panel_y = cy + 322
+        H = int(panel_y + sum(step * 0.8 + len(r) * step for _, r in rows if r)
+                + (34 if report.background else 0) + 16)
     ring_in = R * 0.9
     plot_r = R * 0.84                    # radius available for colours
     cmax = max([c.chroma for c in report.colours] + [sp.neutral_chroma * 2]) / 0.9
@@ -141,12 +158,12 @@ def render_svg(report: Report, title: str = '') -> str:
     out += g
 
     Ln, Cn, hn = sp.axis_names
-    out.append(f'<text x="{cx}" y="{H - 22}" fill="{MUTED}" font-size="12" text-anchor="middle">'
+    out.append(f'<text x="{cx}" y="{cy + 288}" fill="{MUTED}" font-size="12" text-anchor="middle">'
                f'Radius: chroma {Cn} (outer grid circle = {_fmt_c(sp, cmax)}). '
                f'Ring: {Ln} {_fmt_l(sp, L_ring)}, {Cn} {_fmt_c(sp, C_ring)}.</text>')
 
-    # side panel
-    x0, y = 640, 92
+    # side panel (below the wheel in the narrow layout, with the status under the title)
+    x0, y = (28, 70) if narrow else (640, 92)
     secs = ', '.join(f'{a:.0f}°–{b:.0f}°' for a, b in fit.sector_ranges())
     status = 'fits' if fit.fits else f'misses by {fit.cost:.1f}° on average'
     out.append(f'<text x="{x0}" y="{y}" fill="{MUTED}" font-size="14">Palette {status}. '
@@ -160,9 +177,10 @@ def render_svg(report: Report, title: str = '') -> str:
                    + (f'{nb} borderline colour{"s" if nb > 1 else ""} (marked).' if nb else
                       'every colour keeps its verdict in all of them.') + '</text>')
     y += 34
-    rows = [('Palette', report.palette), ('Candidates', report.candidates)]
-    n = sum(len(r) for _, r in rows) + sum(1 for _, r in rows if r)
-    step = min(58, (H - y - 40) / max(n, 1))
+    if narrow:
+        y = panel_y
+    else:
+        step = min(58, (H - y - 40) / max(n_rows, 1))
     sw = min(40, step - 8)
     for name, items in rows:
         if not items:
@@ -194,12 +212,16 @@ def render_svg(report: Report, title: str = '') -> str:
     return '\n'.join(out)
 
 
-def render_colormap_svg(report: ColormapReport, title: str = '') -> str:
-    """A colormap's samples as a path on the chroma-hue wheel, beside its lightness profile."""
+def render_colormap_svg(report: ColormapReport, title: str = '', layout: str = 'wide') -> str:
+    """A colormap's samples as a path on the chroma-hue wheel, beside its lightness profile
+    (layout='wide', 1180 px) or above it (layout='narrow', 640 px wide)."""
+    narrow = _narrow(layout)
     sp = report.space
     fit = report.chosen
     W, H = 1180, 640
     cx, cy, R = 320, 330, 230
+    if narrow:
+        W, H, cy = 640, 1122, 332
     ring_in, plot_r = R * 0.9, R * 0.84
     cmax = max(C for _, C, _ in report.lch) / 0.9
     scale = sp.l_scale
@@ -225,12 +247,15 @@ def render_colormap_svg(report: ColormapReport, title: str = '') -> str:
                  f'paint-order="stroke" stroke="#ffffff" stroke-width="3">{label}</text>')
     g.append('</g>')
     out += g
-    out.append(f'<text x="{cx}" y="{H - 22}" fill="{MUTED}" font-size="12" text-anchor="middle">'
+    out.append(f'<text x="{cx}" y="{cy + 288}" fill="{MUTED}" font-size="12" text-anchor="middle">'
                f'Radius: chroma {Cn} (outer grid circle = {_fmt_c(sp, cmax)}). '
                f'Ring: {Ln} {_fmt_l(sp, L_ring)}, {Cn} {_fmt_c(sp, C_ring)}.</text>')
 
     # lightness profile
-    px0, px1, py0, py1 = 690, 1130, 110, 380          # plot box
+    if narrow:
+        px0, px1, py0, py1 = 78, 600, cy + 368, cy + 568
+    else:
+        px0, px1, py0, py1 = 690, 1130, 110, 380      # plot box
     out.append(f'<text x="{px0 - 50}" y="{py0 - 22}" fill="{INK}" font-size="15" font-weight="600">'
                f'Lightness {Ln} along the colormap</text>')
     for v in range(0, 101, 20):

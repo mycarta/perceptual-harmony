@@ -50,8 +50,13 @@ for space in ('oklch', 'cielch'):
     print(check_colormap(cube1, 'cube1', space).to_text(), end='\n\n')
 print(check_colormap(jet(), 'jet', 'oklch').to_text(), end='\n\n')
 
-for name, samples in (('cubeYF', cubeyf), ('cube1', cube1), ('jet', jet())):
+for name, samples in (('cubeYF', cubeyf), ('cube1', cube1)):
     report = check_colormap(samples, name, 'oklch', template='T')
     out = here / f'{name.lower()}_oklch.svg'
     out.write_text(render_colormap_svg(report, title=f'{name}: T template in OKLCH'))
     print('wrote', out)
+
+report = check_colormap(cubeyf, 'cubeYF', 'oklch', template='T')
+out = here / 'blog' / 'cubeyf.svg'
+out.write_text(render_colormap_svg(report, title='cubeYF: T template in OKLCH', layout='narrow'))
+print('wrote', out)

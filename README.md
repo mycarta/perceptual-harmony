@@ -82,6 +82,7 @@ report.candidates[0].robustness   # 'inside', 'outside' or 'borderline' across s
 report.robustness             # the template refitted in each space
 print(report.to_text())
 open('wheel.svg', 'w').write(render_svg(report))
+open('wheel_narrow.svg', 'w').write(render_svg(report, layout='narrow'))   # 640 px wide
 ```
 
 For a continuous colormap, `check_colormap` takes the ordered samples (hex strings or sRGB
@@ -193,6 +194,47 @@ sector, so X gives the palette more room.
 
 ![Lunenburg event palette in OKLCH](examples/lunenburg_oklch.png)
 
+## Worked example: a meadow game
+
+[`examples/dandelions.py`](examples/dandelions.py) checks the board of the game
+[Dandelions](https://github.com/mycarta/Dandelions). The cells are three greens, for empty,
+flower and seed squares. The symbols on them are a gold flower and a brown seed. The colours come
+from the game's style sheet.
+
+All five fall within one band of yellows and greens, about 75° wide, so the board fits the
+narrow V template. The fit holds in all four spaces of the robustness check, every colour at
+least 10° inside. The pink of the "Wind wins" message sits 30–42° outside, apart from the meadow,
+like an alert colour.
+
+![Dandelions board in OKLCH](examples/dandelions_oklch.png)
+
+## Worked example: Okabe–Ito, a palette built for distinction
+
+The Okabe–Ito palette (Okabe & Ito 2008) was designed so that categories stay distinct for
+readers with colour-vision deficiencies. Claus Wilke calls it "my preferred qualitative color
+scale" and uses it throughout *Fundamentals of Data Visualization* (2019). Since R 4.0 it is the
+default of `palette.colors()`, so R users can check it straight from R:
+
+```sh
+perceptual-harmony check $(Rscript -e 'p <- palette.colors(); cat(paste0(names(p), "=", p))')
+```
+
+[`examples/okabe_ito.py`](examples/okabe_ito.py) runs the same check. No template fits the seven
+hues in any of the four spaces. X comes closest, missing by 4.5° on average in OKLCH, and its best
+rotation moves from space to space. Four colours change sides between spaces. That is by design:
+to keep seven hues apart, the palette spreads them around the wheel. Harmony is not its goal, and
+the report describes this without judging the palette.
+
+A few colours chosen from it can be harmonious, though. Sink & Brikowski (2025, Fig. 2) map the
+Köppen–Geiger climate classes of the contiguous US with three Okabe–Ito colours: vermillion for
+arid, orange for continental and bluish green for temperate. A blue marks a small tropical area
+in Florida. The three fit the T template in all four spaces, each at least 29° inside. The blue
+sits 44–66° outside, set apart like the extra class it is.
+
+| Okabe–Ito, as in R | Three of its colours on a climate map |
+|---|---|
+| ![Okabe–Ito palette in OKLCH](examples/okabe_ito_oklch.png) | ![Köppen–Geiger colours in OKLCH](examples/okabe_ito_koppen_oklch.png) |
+
 ## Worked example: cubeYF and cube1, 2013 revisited
 
 [`examples/cubeyf.py`](examples/cubeyf.py) measures the hue spread of cubeYF, a perceptual
@@ -219,15 +261,13 @@ deviation from 100% perceptual". The numbers show the trade:
 - Lightness rises to a peak of L\* 89 at the yellow-green and then falls to 71 at the orange end. That
   fall of 18 L\* is where cube1 departs from a monotonic profile.
 
-The same 2013 post also placed jet in a T template. jet's hues span 235° in OKLCH and do not fit
-T well; its lightness rises and falls by 58 points. For a colormap, harmony is a secondary
-property: the lightness profile comes first. So each figure shows both.
+The same post also placed jet in a T template; its hues span 235° in OKLCH, and its lightness
+rises and falls by 58 points. For a colormap, harmony is a secondary property: the lightness
+profile comes first. So each figure shows both.
 
 | cubeYF | cube1 |
 |---|---|
 | ![cubeYF in OKLCH](examples/cubeyf_oklch.png) | ![cube1 in OKLCH](examples/cube1_oklch.png) |
-
-![jet in OKLCH](examples/jet_oklch.png)
 
 The cubeYF and cube1 samples in [`examples/data/cubeyf.csv`](examples/data/cubeyf.csv) and
 [`examples/data/cube1.csv`](examples/data/cube1.csv) are reused with permission. Please credit
@@ -261,6 +301,15 @@ notebook, in *The Leading Edge*'s Geophysical tutorial series:
   *ACM Transactions on Graphics* 25(3), 624–630 (Proc. SIGGRAPH 2006).
   <https://igl.ethz.ch/projects/color-harmonization/harmonization.pdf>
 - Matsuda, Y. (1995). *Color design*. Asakura Shoten.
+- Okabe, M., Ito, K. (2008). Color Universal Design (CUD): how to make figures and presentations
+  that are friendly to colorblind people. <https://jfly.uni-koeln.de/color/>
+- Wilke, C. O. (2019). *Fundamentals of Data Visualization*. O'Reilly.
+  <https://clauswilke.com/dataviz/>
+- Zeileis, A., Murrell, P. (2023). Coloring in R's blind spot. *The R Journal* 15(3), 240–256.
+  <https://doi.org/10.32614/RJ-2023-071>
+- Sink, K., Brikowski, T. (2025). Toward merging MOPEX and CAMELS hydrometeorological datasets:
+  compatibility and statistical comparison. *Hydrology and Earth System Sciences* 29, 4015–4054.
+  <https://doi.org/10.5194/hess-29-4015-2025>
 - Ottosson, B. (2020). A perceptual color space for image processing.
   <https://bottosson.github.io/posts/oklab/>
 - Moroney, N., Fairchild, M. D., Hunt, R. W. G., Li, C., Luo, M. R., Newman, T. (2002).

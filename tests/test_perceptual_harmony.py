@@ -178,6 +178,35 @@ def test_svg_is_well_formed():
     ET.fromstring(render_svg(report))
 
 
+def test_narrow_layout():
+    report = check(WINDMILL, ['#94a0f0'], background='#1a2e3d')
+    root = ET.fromstring(render_svg(report, layout='narrow'))
+    assert root.get('width') == '640'
+    with pytest.raises(ValueError):
+        render_svg(report, layout='tall')
+
+
+DANDELIONS = ['#5a9e30', '#246e24', '#9fcc6a', '#f5e642', '#4a2c00']
+
+
+def test_dandelions_board_fits_v_in_every_space():
+    report = check(DANDELIONS, ['#ef9a9a'])
+    assert report.chosen.template.name == 'V' and report.fits_in == 4
+    assert report.candidates[0].robustness == 'outside'
+
+
+OKABE_ITO = ['#000000', '#e69f00', '#56b4e9', '#009e73', '#f0e442', '#0072b2', '#d55e00', '#cc79a7',
+             '#999999']
+
+
+def test_okabe_ito_fits_no_template_but_its_koppen_subset_does():
+    full = check(OKABE_ITO)
+    assert full.fits_in == 0 and not any(f.fits for f in full.fits[:1])
+    koppen = check(['#d55e00', '#e69f00', '#009e73'], ['#0072b2'])
+    assert koppen.chosen.template.name == 'T' and koppen.fits_in == 4
+    assert koppen.candidates[0].robustness == 'outside'
+
+
 def test_cli_json(capsys):
     assert main(['check', *WINDMILL, '-c', 'periwinkle=#94a0f0', '--json']) == 0
     data = json.loads(capsys.readouterr().out)
@@ -248,4 +277,6 @@ def test_jet_lightness_is_not_monotonic():
 
 def test_colormap_svg_is_well_formed():
     from perceptual_harmony import check_colormap, render_colormap_svg
-    ET.fromstring(render_colormap_svg(check_colormap(_cubeyf(), 'cubeYF', template='T')))
+    r = check_colormap(_cubeyf(), 'cubeYF', template='T')
+    ET.fromstring(render_colormap_svg(r))
+    assert ET.fromstring(render_colormap_svg(r, layout='narrow')).get('width') == '640'
