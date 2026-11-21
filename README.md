@@ -149,6 +149,9 @@ were picked from the page banner, a watercolour of a Lunenburg house:
 - two greens from the clapboard;
 - a magenta and a lavender from the tower.
 
+The watercolour's colours were chosen by eye while painting. The real house is blue, white and
+grey.
+
 The palette is harmonious. In OKLCH it fits the Y template exactly: the greens fill the narrow
 sector, and the blues, magenta and lavender fill the wide one. It also fits X exactly, and it
 fits in CIELCh and CAM02-UCS too. The blues sit only about 1° inside the edge of Y's wide
