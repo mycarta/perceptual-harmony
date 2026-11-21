@@ -195,7 +195,7 @@ def render_svg(report: Report, title: str = '', layout: str = 'wide') -> str:
             detail = (f'{c.hex}  {Ln} {_fmt_l(sp, c.lightness)}  {Cn} {_fmt_c(sp, c.chroma)}  '
                       f'{hn} {c.hue:.0f}°  ·  {where}')
             if c.contrast is not None:
-                detail += f'  ·  {c.contrast:.1f}:1'
+                detail += f'  ·  {c.contrast:.1f}:1, ΔL* ' + f'{c.lightness_diff:+.0f}'.replace('-', '−')
             name = c.label
             if c.robustness == 'borderline':
                 name += f'  (borderline: inside in {c.inside_count} of {nrob} spaces)'
@@ -206,8 +206,9 @@ def render_svg(report: Report, title: str = '', layout: str = 'wide') -> str:
             y += step
         y += step * 0.2
     if report.background:
-        out.append(f'<text x="{x0}" y="{H - 22}" fill="{MUTED}" font-size="12">Contrast: WCAG 2 ratio '
-                   f'against {report.background}.</text>')
+        out.append(f'<text x="{x0}" y="{H - 22}" fill="{MUTED}" font-size="12">Contrast against '
+                   f'{report.background}: WCAG 2 ratio; ΔL*, CIE lightness difference '
+                   f'(+ lighter, − darker).</text>')
     out.append('</svg>')
     return '\n'.join(out)
 

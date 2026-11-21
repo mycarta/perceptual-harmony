@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 import pytest
 
 from perceptual_harmony import (SPACES, TEMPLATES, check, contrast_ratio, fit_template,
-                                get_space, margin, parse_hex, render_svg, to_hex)
+                                get_space, lightness_difference, margin, parse_hex, render_svg, to_hex)
 from perceptual_harmony.cli import main
 from perceptual_harmony.harmony import _evaluate, angle_diff
 
@@ -171,6 +171,21 @@ def test_background_contrast_and_nearest():
     assert c.contrast == pytest.approx(contrast_ratio(parse_hex('#94a0f0'), parse_hex('#1a2e3d')))
     assert c.nearest in {p.label for p in report.palette}
 
+
+
+def test_lightness_difference_is_signed_cie_lstar():
+    # reference L* values from colour-science (sRGB, D65)
+    light, dark = parse_hex('#94a0f0'), parse_hex('#1a2e3d')
+    assert lightness_difference(light, dark) == pytest.approx(67.8202 - 17.9661, abs=0.01)
+    assert lightness_difference(dark, light) == pytest.approx(-lightness_difference(light, dark))
+    assert lightness_difference(parse_hex('#777777'), (1, 1, 1)) == pytest.approx(50.034 - 100, abs=0.01)
+    report = check(WINDMILL, ['#94a0f0'], background='#1a2e3d', robustness_spaces=())
+    c = report.candidates[0]
+    assert c.lightness_diff == pytest.approx(lightness_difference(light, dark))
+    assert report.to_dict()['candidates'][0]['lightness_diff'] == pytest.approx(49.85, abs=0.01)
+    assert 'dL*' in report.to_text()
+    # without a background, neither measure is reported
+    assert check(WINDMILL, robustness_spaces=()).palette[0].lightness_diff is None
 
 # ---- CSS --------------------------------------------------------------------------------------
 @pytest.mark.parametrize('value', ['#4e7fcc', '#4E7FCC80', 'rgb(78 127 204)', 'rgb(78, 127, 204, .5)',

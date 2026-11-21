@@ -175,28 +175,28 @@
 <text x="640" y="160" fill="#1f2328" font-size="15" font-weight="600">Palette</text>
 <rect x="640" y="173.2" width="37.4" height="37.4" rx="6" fill="#30859e" stroke="#d0d7de"/>
 <text x="691.4" y="187.5" fill="#1f2328" font-size="14" font-weight="600">board blue</text>
-<text x="691.4" y="205.5" fill="#57606a" font-size="12.5">#30859e  L* 52  C* 26.8  h 231°  ·  inside by 36.5°  ·  3.3:1</text>
+<text x="691.4" y="205.5" fill="#57606a" font-size="12.5">#30859e  L* 52  C* 26.8  h 231°  ·  inside by 36.5°  ·  3.3:1, ΔL* +34</text>
 <rect x="640" y="218.6" width="37.4" height="37.4" rx="6" fill="#c5d9e8" stroke="#d0d7de"/>
 <text x="691.4" y="232.9" fill="#1f2328" font-size="14" font-weight="600">pale label</text>
-<text x="691.4" y="250.9" fill="#57606a" font-size="12.5">#c5d9e8  L* 86  C* 10.3  h 249°  ·  inside by 38.6°  ·  9.6:1</text>
+<text x="691.4" y="250.9" fill="#57606a" font-size="12.5">#c5d9e8  L* 86  C* 10.3  h 249°  ·  inside by 38.6°  ·  9.6:1, ΔL* +68</text>
 <rect x="640" y="264.0" width="37.4" height="37.4" rx="6" fill="#f5e642" stroke="#d0d7de"/>
 <text x="691.4" y="278.3" fill="#1f2328" font-size="14" font-weight="600">gold</text>
-<text x="691.4" y="296.3" fill="#57606a" font-size="12.5">#f5e642  L* 90  C* 77.5  h 99°  ·  inside by 8.7°  ·  10.8:1</text>
+<text x="691.4" y="296.3" fill="#57606a" font-size="12.5">#f5e642  L* 90  C* 77.5  h 99°  ·  inside by 8.7°  ·  10.8:1, ΔL* +72</text>
 <rect x="640" y="309.4" width="37.4" height="37.4" rx="6" fill="#ef9a9a" stroke="#d0d7de"/>
 <text x="691.4" y="323.7" fill="#1f2328" font-size="14" font-weight="600">hit red</text>
-<text x="691.4" y="341.7" fill="#57606a" font-size="12.5">#ef9a9a  L* 72  C* 34.5  h 23°  ·  inside by 8.5°  ·  6.5:1</text>
+<text x="691.4" y="341.7" fill="#57606a" font-size="12.5">#ef9a9a  L* 72  C* 34.5  h 23°  ·  inside by 8.5°  ·  6.5:1, ΔL* +54</text>
 <text x="640" y="377.91999999999996" fill="#1f2328" font-size="15" font-weight="600">Candidates</text>
 <rect x="640" y="391.2" width="37.4" height="37.4" rx="6" fill="#60ccdb" stroke="#d0d7de"/>
 <text x="691.4" y="405.4" fill="#1f2328" font-size="14" font-weight="600">cyan</text>
-<text x="691.4" y="423.4" fill="#57606a" font-size="12.5">#60ccdb  L* 77  C* 31.6  h 212°  ·  inside by 18.0°  ·  7.4:1</text>
+<text x="691.4" y="423.4" fill="#57606a" font-size="12.5">#60ccdb  L* 77  C* 31.6  h 212°  ·  inside by 18.0°  ·  7.4:1, ΔL* +59</text>
 <rect x="640" y="436.6" width="37.4" height="37.4" rx="6" fill="#94a0f0" stroke="#d0d7de"/>
 <text x="691.4" y="450.8" fill="#1f2328" font-size="14" font-weight="600">periwinkle  (borderline: inside in 3 of 4 spaces)</text>
-<text x="691.4" y="468.8" fill="#57606a" font-size="12.5">#94a0f0  L* 68  C* 44.1  h 290°  ·  outside by 2.1°  ·  5.7:1</text>
+<text x="691.4" y="468.8" fill="#57606a" font-size="12.5">#94a0f0  L* 68  C* 44.1  h 290°  ·  outside by 2.1°  ·  5.7:1, ΔL* +50</text>
 <rect x="640" y="482.0" width="37.4" height="37.4" rx="6" fill="#61d1ac" stroke="#d0d7de"/>
 <text x="691.4" y="496.2" fill="#1f2328" font-size="14" font-weight="600">sea green</text>
-<text x="691.4" y="514.2" fill="#57606a" font-size="12.5">#61d1ac  L* 77  C* 41.7  h 168°  ·  outside by 26.3°  ·  7.5:1</text>
+<text x="691.4" y="514.2" fill="#57606a" font-size="12.5">#61d1ac  L* 77  C* 41.7  h 168°  ·  outside by 26.3°  ·  7.5:1, ΔL* +59</text>
 <rect x="640" y="527.4" width="37.4" height="37.4" rx="6" fill="#f0ac4c" stroke="#d0d7de"/>
 <text x="691.4" y="541.6" fill="#1f2328" font-size="14" font-weight="600">amber</text>
-<text x="691.4" y="559.6" fill="#57606a" font-size="12.5">#f0ac4c  L* 75  C* 59.7  h 75°  ·  inside by 33.3°  ·  7.1:1</text>
-<text x="640" y="618" fill="#57606a" font-size="12">Contrast: WCAG 2 ratio against #1a2e3d.</text>
+<text x="691.4" y="559.6" fill="#57606a" font-size="12.5">#f0ac4c  L* 75  C* 59.7  h 75°  ·  inside by 33.3°  ·  7.1:1, ΔL* +57</text>
+<text x="640" y="618" fill="#57606a" font-size="12">Contrast against #1a2e3d: WCAG 2 ratio; ΔL*, CIE lightness difference (+ lighter, − darker).</text>
 </svg>

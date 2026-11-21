@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from .colour import (ROBUSTNESS_SPACES, Space, Triple, get_space, parse_hex, relative_luminance,
-                     to_hex)
+                     srgb_to_cielab, to_hex)
 from .css import parse_colour
 from .harmony import Fit, Template, fit_all, fit_template, get_template, margin
 
@@ -17,6 +17,15 @@ def contrast_ratio(rgb1: Triple, rgb2: Triple) -> float:
     """WCAG 2 contrast ratio, 1 to 21."""
     a, b = sorted((relative_luminance(rgb1), relative_luminance(rgb2)), reverse=True)
     return (a + 0.05) / (b + 0.05)
+
+
+def lightness_difference(rgb: Triple, background: Triple) -> float:
+    """CIE L* of the colour minus L* of the background: positive when the colour is lighter.
+
+    L* depends on luminance alone, as the WCAG 2 ratio does, but on a perceptual scale (0 to 100)
+    and with its sign kept, so it says which way the contrast runs. It is the same whatever
+    colour space the report uses."""
+    return srgb_to_cielab(rgb)[0] - srgb_to_cielab(background)[0]
 
 
 def parse_spec(spec: ColourSpec) -> Tuple[str, str]:
@@ -46,6 +55,7 @@ class ColourInfo:
     nearest: Optional[str] = None   # label of the closest palette colour
     delta_e: Optional[float] = None # colour difference to it, in the space's units
     contrast: Optional[float] = None  # WCAG 2 ratio against the background, if one was given
+    lightness_diff: Optional[float] = None  # CIE L* minus the background's (+ lighter, - darker)
     # margin in each space of the robustness check (template refitted there), by space name
     margins_by_space: Dict[str, float] = field(default_factory=dict)
 
@@ -108,7 +118,7 @@ class Report:
         def col(c: ColourInfo) -> dict:
             d = {k: getattr(c, k) for k in ('label', 'hex', 'role', 'lightness', 'chroma', 'hue',
                                            'neutral', 'margin', 'sector', 'nearest', 'delta_e',
-                                           'contrast', 'robustness')}
+                                           'contrast', 'lightness_diff', 'robustness')}
             d['margins_by_space'] = {k: round(v, 3) for k, v in c.margins_by_space.items()}
             return {k: (round(v, 4) if isinstance(v, float) else v) for k, v in d.items()}
 
@@ -156,7 +166,7 @@ class Report:
         if nrob > 1:
             head += f' {f"in {nrob} spaces":<22}'
         if self.background:
-            head += ' contrast'
+            head += '   WCAG 2    dL*'
         for title, rows in (('Palette', self.palette), ('Candidates', self.candidates)):
             if not rows:
                 continue
@@ -178,7 +188,7 @@ class Report:
                         rob = f'{c.inside_count}/{nrob} ({lo:+.0f} to {hi:+.0f})'
                     line += f' {rob:<22}'
                 if c.contrast is not None:
-                    line += f' {c.contrast:5.2f}:1'
+                    line += f' {c.contrast:6.2f}:1 {c.lightness_diff:+6.1f}'
                 out.append(line)
             out.append('')
         out.append(f'"in"/"out": degrees inside or outside the nearest sector edge of the '
@@ -190,6 +200,9 @@ class Report:
             border = [c.label for c in self.colours if c.robustness == 'borderline']
             if border:
                 out.append(f'Borderline (inside in some spaces, outside in others): {", ".join(border)}.')
+        if self.background:
+            out.append('"WCAG 2": contrast ratio against the background. "dL*": CIE L* difference from '
+                       'it, + lighter, - darker.')
         if self.cvd:
             fmt = cfmt.format
             out += ['', 'Colour-vision deficiency (simulated dichromacy, Machado et al. 2009), '
@@ -223,7 +236,7 @@ def check(palette: Iterable[ColourSpec], candidates: Iterable[ColourSpec] = (),
     palette, candidates: hex strings, 'label=#hex' strings or (label, hex) pairs.
     space: 'oklch' (default), 'cielch', 'cam02ucs', 'cam16ucs' or 'ipt'.
     template: use this template instead of the best-fitting one; `rotation` fixes its angle.
-    background: hex colour; adds WCAG 2 contrast ratios against it.
+    background: a colour; adds WCAG 2 contrast ratios and CIE L* differences against it.
     neutral_chroma: chroma below which a colour's hue is ignored (default depends on the space).
     robustness_spaces: also refit the chosen template in these spaces (the primary space is always
         included, first) and report each colour's margin in every one. A verdict that changes sign
@@ -261,7 +274,9 @@ def check(palette: Iterable[ColourSpec], candidates: Iterable[ColourSpec] = (),
             near = min(others, key=lambda p: sp.delta_e(c.rgb, p.rgb))
             c.nearest, c.delta_e = near.label, sp.delta_e(c.rgb, near.rgb)
         if background:
-            c.contrast = contrast_ratio(c.rgb, parse_hex(parse_colour(background)))
+            bg = parse_hex(parse_colour(background))
+            c.contrast = contrast_ratio(c.rgb, bg)
+            c.lightness_diff = lightness_difference(c.rgb, bg)
 
     robustness = []
     if robustness_spaces:

@@ -166,16 +166,16 @@
 <text x="640" y="160" fill="#1f2328" font-size="15" font-weight="600">Palette</text>
 <rect x="640" y="180.8" width="40" height="40" rx="6" fill="#d55e00" stroke="#d0d7de"/>
 <text x="694" y="196.0" fill="#1f2328" font-size="14" font-weight="600">arid</text>
-<text x="694" y="214.0" fill="#57606a" font-size="12.5">#d55e00  L 62  C 0.170  h 48°  ·  inside by 31.0°  ·  3.9:1</text>
+<text x="694" y="214.0" fill="#57606a" font-size="12.5">#d55e00  L 62  C 0.170  h 48°  ·  inside by 31.0°  ·  3.9:1, ΔL* −46</text>
 <rect x="640" y="238.8" width="40" height="40" rx="6" fill="#e69f00" stroke="#d0d7de"/>
 <text x="694" y="254.0" fill="#1f2328" font-size="14" font-weight="600">continental</text>
-<text x="694" y="272.0" fill="#57606a" font-size="12.5">#e69f00  L 75  C 0.158  h 77°  ·  inside by 60.3°  ·  2.3:1</text>
+<text x="694" y="272.0" fill="#57606a" font-size="12.5">#e69f00  L 75  C 0.158  h 77°  ·  inside by 60.3°  ·  2.3:1, ΔL* −29</text>
 <rect x="640" y="296.8" width="40" height="40" rx="6" fill="#009e73" stroke="#d0d7de"/>
 <text x="694" y="312.0" fill="#1f2328" font-size="14" font-weight="600">temperate</text>
-<text x="694" y="330.0" fill="#57606a" font-size="12.5">#009e73  L 62  C 0.130  h 165°  ·  inside by 31.0°  ·  3.4:1</text>
+<text x="694" y="330.0" fill="#57606a" font-size="12.5">#009e73  L 62  C 0.130  h 165°  ·  inside by 31.0°  ·  3.4:1, ΔL* −42</text>
 <text x="640" y="380.40000000000003" fill="#1f2328" font-size="15" font-weight="600">Candidates</text>
 <rect x="640" y="401.2" width="40" height="40" rx="6" fill="#0072b2" stroke="#d0d7de"/>
 <text x="694" y="416.4" fill="#1f2328" font-size="14" font-weight="600">tropical</text>
-<text x="694" y="434.4" fill="#57606a" font-size="12.5">#0072b2  L 53  C 0.131  h 244°  ·  outside by 47.5°  ·  5.2:1</text>
-<text x="640" y="618" fill="#57606a" font-size="12">Contrast: WCAG 2 ratio against #ffffff.</text>
+<text x="694" y="434.4" fill="#57606a" font-size="12.5">#0072b2  L 53  C 0.131  h 244°  ·  outside by 47.5°  ·  5.2:1, ΔL* −54</text>
+<text x="640" y="618" fill="#57606a" font-size="12">Contrast against #ffffff: WCAG 2 ratio; ΔL*, CIE lightness difference (+ lighter, − darker).</text>
 </svg>

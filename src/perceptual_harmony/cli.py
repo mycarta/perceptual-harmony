@@ -145,8 +145,8 @@ def main(argv=None) -> int:
         c.add_argument('-r', '--rotation', type=float,
                        help='fix the template rotation (centre of its first sector, degrees)')
         c.add_argument('-b', '--background',
-                       help='background colour for WCAG 2 contrast ratios (a colour or, with --css, '
-                            'a property name)')
+                       help='background colour for WCAG 2 contrast ratios and CIE L* differences (a '
+                            'colour or, with --css, a property name)')
         c.add_argument('--neutral-chroma', type=float,
                        help='chroma below which a colour counts as neutral (default depends on space)')
         c.add_argument('--robustness', metavar='SPACES', default=','.join(ROBUSTNESS_SPACES),

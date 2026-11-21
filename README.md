@@ -9,8 +9,8 @@ The tool fits the harmonic hue templates of Cohen-Or et al. (2006) to a palette.
 build on Matsuda's earlier work. Hue, lightness and chroma are measured in a perceptual colour
 space (OKLCH by default), not in HSL or HSV, and each verdict is checked in several spaces. For
 each colour the tool also reports lightness, chroma, its
-colour difference to the nearest palette colour and, optionally, its WCAG 2 contrast against a
-background. It simulates the three dichromacies and flags colours that become hard to tell
+colour difference to the nearest palette colour and, optionally, its contrast against a
+background (the WCAG 2 ratio and the CIE lightness difference). It simulates the three dichromacies and flags colours that become hard to tell
 apart. It can judge candidate colours against an existing palette, which is the usual
 question when a design or a figure needs one more colour, and it can suggest some.
 
@@ -89,7 +89,7 @@ theme, the first definition is used. Other options:
 | `-r`, `--rotation` | fix the template's rotation, in degrees (the centre of its first sector) |
 | `--css FILE` | read the palette from the colour custom properties of a style sheet |
 | `--only`, `--exclude` | with `--css`: keep or drop properties by name, comma-separated, wildcards allowed |
-| `-b`, `--background` | add WCAG 2 contrast ratios against this colour (with `--css`, may be a property name) |
+| `-b`, `--background` | add WCAG 2 contrast ratios and CIE L* differences against this colour (with `--css`, may be a property name) |
 | `--neutral-chroma` | chroma below which a colour counts as neutral and is ignored by the fit |
 | `--robustness` | spaces in which to refit the template and compare verdicts, comma-separated, or `none` (default `oklch,cielch,cam16ucs,ipt`) |
 | `--cvd-svg PATH` | also write swatches under simulated dichromacy |
@@ -221,8 +221,23 @@ writes colours as `oklch()`, which suits the intended audience.
 
 **Distinctness and contrast.** For each colour the tool reports the nearest palette colour and
 the Euclidean colour difference to it, in the chosen space. The report also gives a rough
-just-noticeable difference for each space. With a background, it reports the WCAG 2 contrast
-ratio.
+just-noticeable difference for each space. With a background, it reports two measures of
+contrast against it:
+
+- the WCAG 2 contrast ratio (1 to 21), the measure most accessibility rules refer to;
+- the CIE L* difference, colour minus background: positive when the colour is lighter, negative
+  when it is darker. L* depends on luminance alone, as the WCAG ratio does, but on a perceptual
+  scale from 0 to 100, and its sign says which way the contrast runs. It does not depend on the
+  colour space chosen for the report.
+
+Both are information, not a verdict. The tool sets no threshold except the one you pass to
+`--min-contrast`, which uses the WCAG 2 ratio.
+
+APCA, the contrast method proposed for WCAG 3, is not included. Its reference implementation is
+licensed for web content under WCAG only, the name may be used only by implementations that
+follow its current official version, and other uses fall under the AGPL
+([licence](https://github.com/Myndex/apca-w3/blob/master/LICENSE.md)). That does not fit an MIT
+package also meant for printed figures and maps. Its official tools can be used alongside this one.
 
 **Colour-vision deficiency.** The tool simulates protanopia, deuteranopia and tritanopia with
 the matrices of Machado, Oliveira & Fernandes (2009) at full severity, applied in linear sRGB,
@@ -435,6 +450,7 @@ notebook, in *The Leading Edge*'s Geophysical tutorial series:
   model. *Color Research & Application* 31(4), 320–330.
 - W3C (2018). Web Content Accessibility Guidelines (WCAG) 2.1: contrast ratio.
   <https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio>
+- CIE (2018). *Colorimetry*, 4th edition. CIE 015:2018 (CIELAB and L*).
 
 ## Development
 
