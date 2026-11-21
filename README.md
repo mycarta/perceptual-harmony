@@ -11,12 +11,12 @@ space (OKLCH by default), not in HSL or HSV, and each verdict is checked in seve
 each colour the tool also reports lightness, chroma, its
 colour difference to the nearest palette colour and, optionally, its WCAG 2 contrast against a
 background. It can judge candidate colours against an existing palette, which is the usual
-question when a design or a figure needs one more colour.
+question when a design or a figure needs one more colour, and it can suggest some.
 
 The library uses only the Python standard library (Python 3.9 or newer).
 
-> Status: early development (0.1.0.dev0). Suggesting new colours and colour-vision-deficiency
-> checks are planned and not yet implemented.
+> Status: early development (0.1.0.dev0). Colour-vision-deficiency checks are planned and not
+> yet implemented.
 
 ## Why measure harmony in a perceptual space
 
@@ -79,6 +79,36 @@ theme, the first definition is used. Other options:
 
 `perceptual-harmony templates` lists the templates and their sectors.
 
+## Suggesting colours
+
+`perceptual-harmony suggest` takes the same palette options and proposes new colours:
+
+```sh
+perceptual-harmony suggest 'board blue=#30859e' 'pale label=#c5d9e8' 'gold=#f5e642' 'hit red=#ef9a9a' \
+    -b '#1a2e3d' --min-contrast 4.5 -n 2
+```
+
+It searches a grid of OKLCH colours and keeps those that:
+
+- sit inside the palette's template by at least `--min-margin` degrees (default 5) in the primary
+  space, and inside it in every space of the robustness check;
+- lie within the palette's range of lightness and chroma, slightly widened, or within the
+  `--lightness` and `--chroma` ranges given;
+- fit inside the sRGB gamut and, with `--min-contrast`, reach that WCAG 2 contrast against the
+  background.
+
+Of those, it takes the colour farthest from every palette colour, then repeats, each time also
+staying far from the colours already suggested. The report judges the suggestions like any
+candidate. It ends with CSS custom properties, ready to paste:
+
+```css
+  --new-1: oklch(66.0% 0.135 103);  /* #a29511 */
+  --new-2: oklch(72.5% 0.140 271);  /* #86a0fe */
+```
+
+The suggestions are options to look at, not answers. Distance from the palette is one goal
+among several, and the designer's eye decides.
+
 ## Python
 
 ```python
@@ -96,6 +126,11 @@ report.robustness             # the template refitted in each space
 print(report.to_text())
 open('wheel.svg', 'w').write(render_svg(report))
 open('wheel_narrow.svg', 'w').write(render_svg(report, layout='narrow'))   # 640 px wide
+
+from perceptual_harmony import suggest, css_block
+report, found = suggest(['#30859e', '#c5d9e8', '#f5e642', '#ef9a9a'], n=2,
+                        background='#1a2e3d', min_contrast=4.5)
+print(css_block(found))       # --new-1: oklch(...);  /* #hex */
 ```
 
 For a continuous colormap, `check_colormap` takes the ordered samples (hex strings or sRGB
@@ -182,6 +217,11 @@ similar to them. Periwinkle sits near the far edge of the blue sector. It is cle
 yet still inside the template in OKLCH (by 12°) and CAM02-UCS (by 19°). In CIELCh it is 2°
 outside, which is the space dependence described above. The robustness check reports it as
 borderline: inside in three of four spaces. The palette itself fits X in all four.
+
+Asked for two colours with at least 4.5:1 contrast on the compass background,
+`perceptual-harmony suggest` proposes `#86a0fe` as the second. It is within one just-noticeable
+difference of the periwinkle chosen by eye: the same lightness, a little more chroma, 6° of hue
+apart.
 
 | OKLCH | CIELCh |
 |---|---|

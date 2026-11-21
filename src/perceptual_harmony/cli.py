@@ -35,7 +35,8 @@ def _spec(text: str, props) -> str:
     return f'{label.strip() or hx}={hx}'
 
 
-def _cmd_check(args) -> int:
+def _palette(args):
+    """Palette specs from --css and positional colours; returns (palette, props, notes)."""
     props, palette, notes = {}, [], []
     if args.css:
         with open(args.css, encoding='utf-8') as f:
@@ -46,6 +47,54 @@ def _cmd_check(args) -> int:
     palette += [_spec(c, props) for c in args.colours]
     if not palette:
         raise ValueError('no palette colours: give colours, or --css with colour custom properties')
+    return palette, props, notes
+
+
+def _write_svg(args, report):
+    if args.svg:
+        from .svg import render_svg
+        with open(args.svg, 'w', encoding='utf-8') as f:
+            f.write(render_svg(report, title=args.title or '', layout=args.layout))
+        if not args.json:
+            print(f'\nwrote {args.svg}')
+
+
+def _pair(text):
+    if not text:
+        return None
+    a, b = (float(t) for t in text.split(','))
+    return a, b
+
+
+def _cmd_suggest(args) -> int:
+    from .suggest import css_block, suggest
+    palette, props, notes = _palette(args)
+    light = _pair(args.lightness)
+    if light and max(light) > 1:
+        light = (light[0] / 100, light[1] / 100)        # given in percent
+    report, found = suggest(palette, n=args.n, space=args.space, template=args.template,
+                            rotation=args.rotation,
+                            background=lookup(args.background, props) if args.background else None,
+                            min_contrast=args.min_contrast, min_margin=args.min_margin,
+                            lightness=light, chroma=_pair(args.chroma),
+                            robustness_spaces=_robustness_spaces(args.robustness),
+                            neutral_chroma=args.neutral_chroma, prefix=args.prefix)
+    report.notes += notes
+    if args.json:
+        import json
+        d = report.to_dict()
+        d['suggestions'] = [s.to_dict() for s in found]
+        print(json.dumps(d, indent=2, ensure_ascii=False))
+    else:
+        print(report.to_text())
+        if found:
+            print('\nSuggested colours, as CSS custom properties:\n' + css_block(found))
+    _write_svg(args, report)
+    return 0
+
+
+def _cmd_check(args) -> int:
+    palette, props, notes = _palette(args)
     report = check(palette, [_spec(c, props) for c in args.candidate], space=args.space,
                    template=args.template, rotation=args.rotation,
                    background=lookup(args.background, props) if args.background else None,
@@ -53,12 +102,7 @@ def _cmd_check(args) -> int:
                    robustness_spaces=_robustness_spaces(args.robustness))
     report.notes += notes
     print(report.to_json() if args.json else report.to_text())
-    if args.svg:
-        from .svg import render_svg
-        with open(args.svg, 'w', encoding='utf-8') as f:
-            f.write(render_svg(report, title=args.title or ''))
-        if not args.json:
-            print(f'\nwrote {args.svg}')
+    _write_svg(args, report)
     return 0
 
 
@@ -76,37 +120,60 @@ def main(argv=None) -> int:
     p.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     sub = p.add_subparsers(dest='command', required=True)
 
+    def common(c):
+        c.add_argument('colours', nargs='*', help='palette colours (added after any read with --css)')
+        c.add_argument('--css', metavar='FILE',
+                       help='read the palette from the colour custom properties (--name: colour) of '
+                            'a style sheet; -b and -c then also accept property names')
+        c.add_argument('--only', metavar='NAMES',
+                       help='with --css: keep only these properties (comma-separated, wildcards allowed)')
+        c.add_argument('--exclude', metavar='NAMES',
+                       help='with --css: leave out these properties, e.g. "ink*,paper*"')
+        c.add_argument('-s', '--space', default='oklch', choices=list(SPACES),
+                       help='colour space for lightness, chroma and hue (default: oklch)')
+        c.add_argument('-t', '--template', choices=list(TEMPLATES),
+                       help='use this template instead of the best-fitting one')
+        c.add_argument('-r', '--rotation', type=float,
+                       help='fix the template rotation (centre of its first sector, degrees)')
+        c.add_argument('-b', '--background',
+                       help='background colour for WCAG 2 contrast ratios (a colour or, with --css, '
+                            'a property name)')
+        c.add_argument('--neutral-chroma', type=float,
+                       help='chroma below which a colour counts as neutral (default depends on space)')
+        c.add_argument('--robustness', metavar='SPACES', default=','.join(ROBUSTNESS_SPACES),
+                       help='comma-separated colour spaces in which to refit the template and '
+                            f'compare each verdict, or "none" (default: {",".join(ROBUSTNESS_SPACES)})')
+        c.add_argument('--svg', metavar='PATH', help='also write a hue-wheel figure as SVG')
+        c.add_argument('--layout', default='wide', choices=('wide', 'narrow'),
+                       help='SVG layout: wide (1180 px) or narrow (640 px, for a blog column)')
+        c.add_argument('--title', help='title for the SVG figure')
+        c.add_argument('--json', action='store_true', help='print the report as JSON')
+
     c = sub.add_parser('check', help='fit the hue templates to a palette and judge candidate colours',
                        description='Colours are CSS colours (hex, rgb(), hsl(), oklch(), names ...), '
                                    'optionally labelled: "gold=#f5e642".')
-    c.add_argument('colours', nargs='*', help='palette colours (added after any read with --css)')
-    c.add_argument('--css', metavar='FILE',
-                   help='read the palette from the colour custom properties (--name: colour) of a '
-                        'style sheet; -b and -c then also accept property names')
-    c.add_argument('--only', metavar='NAMES',
-                   help='with --css: keep only these properties (comma-separated, wildcards allowed)')
-    c.add_argument('--exclude', metavar='NAMES',
-                   help='with --css: leave out these properties, e.g. "ink*,paper*"')
+    common(c)
     c.add_argument('-c', '--candidate', action='append', default=[],
                    help='a candidate colour to judge against the palette (repeatable)')
-    c.add_argument('-s', '--space', default='oklch', choices=list(SPACES),
-                   help='colour space for lightness, chroma and hue (default: oklch)')
-    c.add_argument('-t', '--template', choices=list(TEMPLATES),
-                   help='judge against this template instead of the best-fitting one')
-    c.add_argument('-r', '--rotation', type=float,
-                   help='fix the template rotation (centre of its first sector, degrees)')
-    c.add_argument('-b', '--background',
-                   help='background colour for WCAG 2 contrast ratios (a colour or, with --css, a '
-                        'property name)')
-    c.add_argument('--neutral-chroma', type=float,
-                   help='chroma below which a colour counts as neutral (default depends on space)')
-    c.add_argument('--robustness', metavar='SPACES', default=','.join(ROBUSTNESS_SPACES),
-                   help='comma-separated colour spaces in which to refit the template and compare '
-                        f'each verdict, or "none" (default: {",".join(ROBUSTNESS_SPACES)})')
-    c.add_argument('--svg', metavar='PATH', help='also write a hue-wheel figure as SVG')
-    c.add_argument('--title', help='title for the SVG figure')
-    c.add_argument('--json', action='store_true', help='print the report as JSON')
     c.set_defaults(func=_cmd_check)
+
+    g = sub.add_parser('suggest', help='suggest new colours inside the palette\'s template',
+                       description='Suggest colours that sit inside the palette\'s harmonic template, '
+                                   'in every space of the robustness check, and are as distinct as '
+                                   'possible from the palette and from each other. Output includes '
+                                   'CSS oklch() custom properties.')
+    common(g)
+    g.add_argument('-n', type=int, default=3, help='how many colours to suggest (default: 3)')
+    g.add_argument('--min-contrast', type=float,
+                   help='WCAG 2 contrast each suggestion must reach against --background')
+    g.add_argument('--min-margin', type=float, default=5.0,
+                   help='degrees inside the template, in the primary space (default: 5)')
+    g.add_argument('--lightness', metavar='LO,HI',
+                   help='OKLCH lightness range to search, 0-1 or percent (default: the palette\'s, widened)')
+    g.add_argument('--chroma', metavar='LO,HI',
+                   help='OKLCH chroma range to search (default: the palette\'s, widened)')
+    g.add_argument('--prefix', default='new', help='name prefix of the suggestions (default: new)')
+    g.set_defaults(func=_cmd_suggest)
 
     t = sub.add_parser('templates', help='list the hue templates')
     t.set_defaults(func=_cmd_templates)

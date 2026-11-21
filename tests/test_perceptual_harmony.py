@@ -231,6 +231,37 @@ def test_cli_css(tmp_path, capsys):
         main(['check'])                     # no colours at all
 
 
+# ---- suggestions ------------------------------------------------------------------------------
+def test_suggestions_are_inside_distinct_and_meet_contrast():
+    from perceptual_harmony import suggest
+    report, found = suggest(WINDMILL, n=2, background='#1a2e3d', min_contrast=4.5)
+    assert len(found) == 2 and len(report.candidates) == 2
+    for c, s in zip(report.candidates, found):
+        assert c.hex == s.hex and c.robustness == 'inside' and c.margin >= 5
+        assert c.contrast >= 4.5
+        assert s.css.startswith('oklch(') and parse_colour_ok(s.css) == s.hex
+    assert found[0].distance >= found[1].distance > 0.05    # greedy: farthest first
+
+
+def parse_colour_ok(css):
+    from perceptual_harmony import parse_colour
+    return parse_colour(css)
+
+
+def test_suggest_reports_when_nothing_fits():
+    from perceptual_harmony import suggest
+    report, found = suggest(WINDMILL, n=1, background='#ffffff', min_contrast=21)
+    assert found == [] and any('no other colour' in n for n in report.notes)
+
+
+def test_cli_suggest(capsys):
+    assert main(['suggest', *WINDMILL, '-n', '1', '--json']) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert len(data['suggestions']) == 1 and data['suggestions'][0]['css'].startswith('oklch(')
+    assert main(['suggest', *WINDMILL, '-n', '1', '--lightness', '60,80']) == 0
+    assert '--new-1: oklch(' in capsys.readouterr().out
+
+
 # ---- outputs ----------------------------------------------------------------------------------
 def test_svg_is_well_formed():
     report = check(WINDMILL + ['a & b=#000000'], ['#94a0f0'], background='#1a2e3d')
