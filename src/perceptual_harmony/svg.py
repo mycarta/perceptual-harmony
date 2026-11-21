@@ -248,7 +248,9 @@ def render_colormap_svg(report: ColormapReport, title: str = '', layout: str = '
     ends = ((pts[0], pts[k], report.hexes[0], 'start'), (pts[-1], pts[-1 - k], report.hexes[-1], 'end'))
     for (x, y), (nx, ny), hx, label in ends:
         g.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="7" fill="{hx}" stroke="{INK}" stroke-width="1.5"/>')
-        if close:
+        if close and label == 'start':              # centred above or below, on its path's side
+            lx, ly, anchor = x, y + (20 if ny > y else -20), 'middle'
+        elif close:
             right = nx < x                          # path leaves to the left: label on the right
             lx, ly = x + (11 if right else -11), y + (13 if ny > y else -13)
             anchor = 'start' if right else 'end'

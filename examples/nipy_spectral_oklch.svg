@@ -409,7 +409,7 @@
 <circle cx="10.2" cy="-3.2" r="3.4" fill="#ccbcbc"/>
 <circle cx="0.0" cy="-0.0" r="3.4" fill="#cccccc"/>
 <circle cx="0.0" cy="-0.0" r="7" fill="#000000" stroke="#1f2328" stroke-width="1.5"/>
-<text x="-11.0" y="13.0" fill="#1f2328" font-size="13" text-anchor="end" dominant-baseline="central" paint-order="stroke" stroke="#ffffff" stroke-width="3">start</text>
+<text x="0.0" y="20.0" fill="#1f2328" font-size="13" text-anchor="middle" dominant-baseline="central" paint-order="stroke" stroke="#ffffff" stroke-width="3">start</text>
 <circle cx="0.0" cy="-0.0" r="7" fill="#cccccc" stroke="#1f2328" stroke-width="1.5"/>
 <text x="-11.0" y="-13.0" fill="#1f2328" font-size="13" text-anchor="end" dominant-baseline="central" paint-order="stroke" stroke="#ffffff" stroke-width="3">end</text>
 </g>
