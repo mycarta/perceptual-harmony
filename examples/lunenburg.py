@@ -10,7 +10,8 @@ site's style sheet, as the command line does with --css.
 """
 from pathlib import Path
 
-from perceptual_harmony import check, css_colours, custom_properties, parse_colour, render_svg
+from perceptual_harmony import (check, css_colours, custom_properties, parse_colour, render_cvd_svg,
+                                render_svg)
 
 # data/lunenburg.css is the :root block of the site's style sheet. The colour roles:
 #   sky-blue    music badges, links, header      sky-light  header gradient
@@ -28,3 +29,6 @@ title = f'Lunenburg event palette: {report.chosen.template.name} template in {re
 for out, layout in ((here / 'lunenburg_oklch.svg', 'wide'), (here / 'blog' / 'lunenburg.svg', 'narrow')):
     out.write_text(render_svg(report, title=title, layout=layout))
     print('wrote', out)
+out = here / 'lunenburg_cvd.svg'
+out.write_text(render_cvd_svg(report, title='Lunenburg event palette, simulated dichromacy'))
+print('wrote', out)

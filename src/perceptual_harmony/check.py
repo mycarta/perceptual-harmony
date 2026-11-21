@@ -91,6 +91,8 @@ class Report:
     background: Optional[str] = None
     notes: List[str] = field(default_factory=list)
     robustness: List[SpaceFit] = field(default_factory=list)   # primary space first
+    cvd: Dict[str, list] = field(default_factory=dict)         # dichromacy -> close CVDPairs
+    cvd_threshold: Optional[float] = None
 
     @property
     def colours(self) -> List[ColourInfo]:
@@ -119,7 +121,9 @@ class Report:
                 'palette': [col(c) for c in self.palette],
                 'candidates': [col(c) for c in self.candidates], 'notes': self.notes,
                 'robustness': [{'space': r.space.name, **fit(r.fit), 'best': r.best.template.name}
-                               for r in self.robustness]}
+                               for r in self.robustness],
+                'cvd': {k: [p.to_dict() for p in v] for k, v in self.cvd.items()},
+                'cvd_threshold': self.cvd_threshold}
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2, ensure_ascii=False)
@@ -186,6 +190,19 @@ class Report:
             border = [c.label for c in self.colours if c.robustness == 'borderline']
             if border:
                 out.append(f'Borderline (inside in some spaces, outside in others): {", ".join(border)}.')
+        if self.cvd:
+            fmt = cfmt.format
+            out += ['', 'Colour-vision deficiency (simulated dichromacy, Machado et al. 2009), '
+                        'closest pairs:']
+            for kind, pairs in self.cvd.items():
+                for i, pr in enumerate(pairs[:4]):
+                    flag = '  close' if pr.delta_e < self.cvd_threshold else ''
+                    out.append(f'   {kind if i == 0 else "":13} {(pr.a + " / " + pr.b)[:40]:40} '
+                               f'dE {fmt(pr.delta_e):>6} (normal vision {fmt(pr.normal)}){flag}')
+                if len(pairs) > 4:
+                    out.append(f'   {"":13} and {len(pairs) - 4} more close pairs')
+            out.append(f'"close": colour difference below {fmt(self.cvd_threshold)} (3 x the rough '
+                       f'just-noticeable dE); such pairs may be hard to tell apart.')
         out += self.notes
         return '\n'.join(out)
 
@@ -199,7 +216,8 @@ def check(palette: Iterable[ColourSpec], candidates: Iterable[ColourSpec] = (),
           space='oklch', template: Union[None, str, Template] = None,
           rotation: Optional[float] = None, background: Optional[str] = None,
           neutral_chroma: Optional[float] = None,
-          robustness_spaces: Sequence = ROBUSTNESS_SPACES) -> Report:
+          robustness_spaces: Sequence = ROBUSTNESS_SPACES,
+          cvd: bool = True, cvd_threshold: Optional[float] = None) -> Report:
     """Fit the hue templates to `palette` and judge each colour, and each candidate, against it.
 
     palette, candidates: hex strings, 'label=#hex' strings or (label, hex) pairs.
@@ -211,6 +229,9 @@ def check(palette: Iterable[ColourSpec], candidates: Iterable[ColourSpec] = (),
         included, first) and report each colour's margin in every one. A verdict that changes sign
         between spaces is borderline. Colours neutral in the primary space stay out of every fit.
         Pass () to skip.
+    cvd: simulate protanopia, deuteranopia and tritanopia and report the pairs of colours
+        (palette and candidates) that come closest; pairs below `cvd_threshold` (default three
+        times the space's rough JND) are flagged as close.
     """
     sp = get_space(space)
     thresh = sp.neutral_chroma if neutral_chroma is None else neutral_chroma
@@ -269,8 +290,13 @@ def check(palette: Iterable[ColourSpec], candidates: Iterable[ColourSpec] = (),
     neutrals = [c.label for c in pal if c.neutral]
     if neutrals:
         notes.append(f'Neutral (ignored by the hue fit): {", ".join(neutrals)}.')
-    return Report(sp, pal, cands, fits, chosen, parse_colour(background) if background else None,
-                  notes, robustness)
+    report = Report(sp, pal, cands, fits, chosen, parse_colour(background) if background else None,
+                    notes, robustness)
+    if cvd and len(pal) + len(cands) >= 2:
+        from .cvd import close_pairs
+        report.cvd_threshold = 3 * sp.jnd if cvd_threshold is None else cvd_threshold
+        report.cvd = close_pairs([(c.label, c.rgb) for c in pal + cands], sp, report.cvd_threshold)
+    return report
 
 
 # ---- colormaps --------------------------------------------------------------------------------

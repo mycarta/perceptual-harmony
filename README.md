@@ -10,13 +10,13 @@ build on Matsuda's earlier work. Hue, lightness and chroma are measured in a per
 space (OKLCH by default), not in HSL or HSV, and each verdict is checked in several spaces. For
 each colour the tool also reports lightness, chroma, its
 colour difference to the nearest palette colour and, optionally, its WCAG 2 contrast against a
-background. It can judge candidate colours against an existing palette, which is the usual
+background. It simulates the three dichromacies and flags colours that become hard to tell
+apart. It can judge candidate colours against an existing palette, which is the usual
 question when a design or a figure needs one more colour, and it can suggest some.
 
 The library uses only the Python standard library (Python 3.9 or newer).
 
-> Status: early development (0.1.0.dev0). Colour-vision-deficiency checks are planned and not
-> yet implemented.
+> Status: early development (0.1.0.dev0).
 
 ## Why measure harmony in a perceptual space
 
@@ -74,6 +74,9 @@ theme, the first definition is used. Other options:
 | `-b`, `--background` | add WCAG 2 contrast ratios against this colour (with `--css`, may be a property name) |
 | `--neutral-chroma` | chroma below which a colour counts as neutral and is ignored by the fit |
 | `--robustness` | spaces in which to refit the template and compare verdicts, comma-separated, or `none` (default `oklch,cielch,cam16ucs,ipt`) |
+| `--cvd-svg PATH` | also write swatches under simulated dichromacy |
+| `--cvd-threshold` | colour difference below which a pair counts as close under simulated dichromacy |
+| `--no-cvd` | skip the colour-vision-deficiency check |
 | `--svg PATH` | also write the hue-wheel figure |
 | `--json` | print the report as JSON |
 
@@ -105,6 +108,9 @@ candidate. It ends with CSS custom properties, ready to paste:
   --new-1: oklch(66.0% 0.135 103);  /* #a29511 */
   --new-2: oklch(72.5% 0.140 271);  /* #86a0fe */
 ```
+
+With `--cvd-safe`, each suggestion must also stay distinct from the palette, and from the
+other suggestions, under all three simulated dichromacies.
 
 The suggestions are options to look at, not answers. Distance from the palette is one goal
 among several, and the designer's eye decides.
@@ -200,6 +206,14 @@ the Euclidean colour difference to it, in the chosen space. The report also give
 just-noticeable difference for each space. With a background, it reports the WCAG 2 contrast
 ratio.
 
+**Colour-vision deficiency.** The tool simulates protanopia, deuteranopia and tritanopia with
+the matrices of Machado, Oliveira & Fernandes (2009) at full severity, applied in linear sRGB,
+as the `colorspacious` package does. The test suite checks the results against it. For each
+dichromacy the report lists the pairs of colours that come closest, with their colour
+difference beside the normal-vision value. Pairs below three times the space's rough
+just-noticeable difference are flagged as close. The threshold is a rough guide: thin lines and
+small marks need more difference than large areas.
+
 **The figure.** The wheel is the a–b plane of the chosen space, with +a to the right and hues
 counter-clockwise. Each colour sits at a radius proportional to its chroma. The outer ring is
 drawn at one lightness and one chroma for every hue (the most colourful ring that stays inside
@@ -255,6 +269,11 @@ sector, so X gives the palette more room.
 
 ![Lunenburg event palette in OKLCH](examples/lunenburg_oklch.png)
 
+Under simulated protanopia, sky-light and lavender come close: their colour difference drops from
+0.103 to 0.028. The other pairs stay apart under all three dichromacies.
+
+![Lunenburg event palette under simulated dichromacy](examples/lunenburg_cvd.png)
+
 ## Worked example: a meadow game
 
 [`examples/dandelions.py`](examples/dandelions.py) checks the board of the game
@@ -285,6 +304,11 @@ hues in any of the four spaces. X comes closest, missing by 4.5° on average in 
 rotation moves from space to space. Four colours change sides between spaces. That is by design:
 to keep seven hues apart, the palette spreads them around the wheel. Harmony is not its goal, and
 the report describes this without judging the palette.
+
+Its goal shows in the colour-vision check. Under the three simulated dichromacies no two of the
+seven hues come close; the closest pair stays at 0.076. The grey that R adds as a ninth colour
+is another matter: under simulated deuteranopia it comes within 0.019 of reddish purple, and
+under protanopia within 0.054 of bluish green.
 
 A few colours chosen from it can be harmonious, though. Sink & Brikowski (2025, Fig. 2) map the
 Köppen–Geiger climate classes of the contiguous US with three Okabe–Ito colours: vermillion for
@@ -377,6 +401,9 @@ notebook, in *The Leading Edge*'s Geophysical tutorial series:
 - Sink, K., Brikowski, T. (2025). Toward merging MOPEX and CAMELS hydrometeorological datasets:
   compatibility and statistical comparison. *Hydrology and Earth System Sciences* 29, 4015–4054.
   <https://doi.org/10.5194/hess-29-4015-2025>
+- Machado, G. M., Oliveira, M. M., Fernandes, L. A. F. (2009). A physiologically-based model
+  for simulation of color vision deficiency. *IEEE Transactions on Visualization and Computer
+  Graphics* 15(6), 1291–1298. <https://doi.org/10.1109/TVCG.2009.113>
 - Ottosson, B. (2020). A perceptual color space for image processing.
   <https://bottosson.github.io/posts/oklab/>
 - Moroney, N., Fairchild, M. D., Hunt, R. W. G., Li, C., Luo, M. R., Newman, T. (2002).

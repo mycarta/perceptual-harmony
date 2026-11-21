@@ -57,6 +57,12 @@ def _write_svg(args, report):
             f.write(render_svg(report, title=args.title or '', layout=args.layout))
         if not args.json:
             print(f'\nwrote {args.svg}')
+    if args.cvd_svg:
+        from .svg import render_cvd_svg
+        with open(args.cvd_svg, 'w', encoding='utf-8') as f:
+            f.write(render_cvd_svg(report))
+        if not args.json:
+            print(f'wrote {args.cvd_svg}')
 
 
 def _pair(text):
@@ -78,7 +84,9 @@ def _cmd_suggest(args) -> int:
                             min_contrast=args.min_contrast, min_margin=args.min_margin,
                             lightness=light, chroma=_pair(args.chroma),
                             robustness_spaces=_robustness_spaces(args.robustness),
-                            neutral_chroma=args.neutral_chroma, prefix=args.prefix)
+                            neutral_chroma=args.neutral_chroma, prefix=args.prefix,
+                            cvd_safe=args.cvd_safe, cvd=not args.no_cvd,
+                            cvd_threshold=args.cvd_threshold)
     report.notes += notes
     if args.json:
         import json
@@ -99,7 +107,8 @@ def _cmd_check(args) -> int:
                    template=args.template, rotation=args.rotation,
                    background=lookup(args.background, props) if args.background else None,
                    neutral_chroma=args.neutral_chroma,
-                   robustness_spaces=_robustness_spaces(args.robustness))
+                   robustness_spaces=_robustness_spaces(args.robustness),
+                   cvd=not args.no_cvd, cvd_threshold=args.cvd_threshold)
     report.notes += notes
     print(report.to_json() if args.json else report.to_text())
     _write_svg(args, report)
@@ -143,6 +152,13 @@ def main(argv=None) -> int:
         c.add_argument('--robustness', metavar='SPACES', default=','.join(ROBUSTNESS_SPACES),
                        help='comma-separated colour spaces in which to refit the template and '
                             f'compare each verdict, or "none" (default: {",".join(ROBUSTNESS_SPACES)})')
+        c.add_argument('--no-cvd', action='store_true',
+                       help='skip the colour-vision-deficiency check')
+        c.add_argument('--cvd-threshold', type=float,
+                       help='colour difference below which a pair counts as close under simulated '
+                            'dichromacy (default: 3 x the space\'s rough just-noticeable difference)')
+        c.add_argument('--cvd-svg', metavar='PATH',
+                       help='also write swatches under simulated dichromacy as SVG')
         c.add_argument('--svg', metavar='PATH', help='also write a hue-wheel figure as SVG')
         c.add_argument('--layout', default='wide', choices=('wide', 'narrow'),
                        help='SVG layout: wide (1180 px) or narrow (640 px, for a blog column)')
@@ -173,6 +189,8 @@ def main(argv=None) -> int:
     g.add_argument('--chroma', metavar='LO,HI',
                    help='OKLCH chroma range to search (default: the palette\'s, widened)')
     g.add_argument('--prefix', default='new', help='name prefix of the suggestions (default: new)')
+    g.add_argument('--cvd-safe', action='store_true',
+                   help='keep each suggestion distinct from the palette under simulated dichromacy')
     g.set_defaults(func=_cmd_suggest)
 
     t = sub.add_parser('templates', help='list the hue templates')

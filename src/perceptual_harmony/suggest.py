@@ -19,6 +19,7 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 from .check import ColourSpec, Report, check, contrast_ratio
 from .colour import ROBUSTNESS_SPACES, SPACES, get_space, in_gamut, oklab_to_srgb, parse_hex, srgb_to_oklab, to_hex
 from .css import parse_colour
+from .cvd import CVD_TYPES, simulate
 from .harmony import fit_template, margin
 
 
@@ -54,7 +55,8 @@ def suggest(palette: Iterable[ColourSpec], n: int = 3, space='oklch', template=N
             chroma: Optional[Tuple[float, float]] = None,
             robustness_spaces: Sequence = ROBUSTNESS_SPACES,
             neutral_chroma: Optional[float] = None,
-            prefix: str = 'new') -> Tuple[Report, List[Suggestion]]:
+            prefix: str = 'new', cvd_safe: bool = False, cvd: bool = True,
+            cvd_threshold: Optional[float] = None) -> Tuple[Report, List[Suggestion]]:
     """Suggest up to `n` colours for `palette`; returns (report, suggestions).
 
     The report is a `check` of the palette with the suggestions as candidates, so it carries
@@ -63,6 +65,9 @@ def suggest(palette: Iterable[ColourSpec], n: int = 3, space='oklch', template=N
     min_margin: degrees a suggestion must sit inside the template in the primary space.
     lightness, chroma: OKLCH ranges to search, e.g. (0.6, 0.8) and (0.05, 0.15); by default the
         palette's own range, widened by 0.05 in lightness and 0.02 in chroma.
+    cvd_safe: also require each suggestion to stay at least `cvd_threshold` (in the primary
+        space; default three times its rough JND) from every palette colour and earlier
+        suggestion under simulated protanopia, deuteranopia and tritanopia.
     """
     palette = list(palette)
     base = check(palette, space=space, template=template, rotation=rotation, background=background,
@@ -98,10 +103,18 @@ def suggest(palette: Iterable[ColourSpec], n: int = 3, space='oklch', template=N
                     continue
                 grid.append((L, C, float(h), (L, a, b), rgb))
 
+    threshold = 3 * sp.jnd if cvd_threshold is None else cvd_threshold
+    sim_taken = {k: [simulate(c.rgb, k) for c in base.palette] for k in CVD_TYPES}
+
     def eligible(rgb) -> bool:
         for s, fit, need in checks:
             if margin(s.lch(rgb)[2], fit.template, fit.rotation)[0] < need:
                 return False
+        if cvd_safe:
+            for k in CVD_TYPES:
+                srgb = simulate(rgb, k)
+                if any(sp.delta_e(srgb, t) < threshold for t in sim_taken[k]):
+                    return False
         return True
 
     taken = [srgb_to_oklab(c.rgb) for c in base.palette]
@@ -123,13 +136,16 @@ def suggest(palette: Iterable[ColourSpec], n: int = 3, space='oklch', template=N
         d = min(math.dist(lab, t) for t in taken)
         out.append(Suggestion(f'{prefix}-{k + 1}', to_hex(rgb), L, C, h, d))
         taken.append(lab)
+        for k in CVD_TYPES:
+            sim_taken[k].append(simulate(rgb, k))
         nearest = [min(d0, math.dist(g[3], lab)) for d0, g in zip(nearest, grid)]
 
     report = check(palette, [f'{s.label}={s.hex}' for s in out], space=space, template=template,
                    rotation=rotation, background=background, neutral_chroma=neutral_chroma,
-                   robustness_spaces=robustness_spaces)
+                   robustness_spaces=robustness_spaces, cvd=cvd, cvd_threshold=cvd_threshold)
     report.notes += [f'Suggestions searched in OKLCH: lightness {L_lo * 100:.0f}-{L_hi * 100:.0f}%, '
-                     f'chroma {C_lo:.3f}-{C_hi:.3f}, at least {min_margin:g} deg inside the template.']
+                     f'chroma {C_lo:.3f}-{C_hi:.3f}, at least {min_margin:g} deg inside the template'
+                     + (', distinct under simulated dichromacy.' if cvd_safe else '.')]
     report.notes += notes
     return report, out
 

@@ -231,6 +231,54 @@ def test_cli_css(tmp_path, capsys):
         main(['check'])                     # no colours at all
 
 
+# ---- colour-vision deficiency ---------------------------------------------------------------
+def test_cvd_simulation_matches_colorspacious():
+    cs = pytest.importorskip('colorspacious')
+    np = pytest.importorskip('numpy')
+    from perceptual_harmony.colour import srgb_to_linear
+    from perceptual_harmony.cvd import MACHADO_2009
+    names = {'protanopia': 'protanomaly', 'deuteranopia': 'deuteranomaly', 'tritanopia': 'tritanomaly'}
+    rng = random.Random(5)
+    for kind, m in MACHADO_2009.items():
+        for _ in range(50):
+            rgb = tuple(rng.random() for _ in range(3))
+            lin = srgb_to_linear(rgb)
+            ours = [sum(m[i][j] * lin[j] for j in range(3)) for i in range(3)]
+            ref = cs.cspace_convert(np.array(rgb), {'name': 'sRGB1+CVD', 'cvd_type': names[kind],
+                                                    'severity': 100}, 'sRGB1-linear')
+            assert ours == pytest.approx(list(ref), abs=1e-9)
+
+
+def test_cvd_close_pairs():
+    lun = check(LUNENBURG, robustness_spaces=())
+    prot = lun.cvd['protanopia'][0]
+    assert {prot.a, prot.b} == {'#6b9be8', '#b998dd'} and prot.delta_e < lun.cvd_threshold < prot.normal
+    oi = check(OKABE_ITO[1:8], robustness_spaces=())          # the seven hues
+    assert all(pairs[0].delta_e > oi.cvd_threshold for pairs in oi.cvd.values())
+    assert 'Colour-vision deficiency' in lun.to_text()
+    assert check(LUNENBURG, robustness_spaces=(), cvd=False).cvd == {}
+
+
+def test_cvd_svg_and_cli(tmp_path, capsys):
+    from perceptual_harmony import render_cvd_svg
+    ET.fromstring(render_cvd_svg(check(WINDMILL + ['a & b=#000000'], ['#94a0f0'])))
+    out = tmp_path / 'cvd.svg'
+    assert main(['check', *WINDMILL, '--cvd-svg', str(out), '--robustness', 'none']) == 0
+    assert out.read_text().startswith('<svg')
+    capsys.readouterr()
+    assert main(['check', *WINDMILL, '--no-cvd', '--json']) == 0
+    assert json.loads(capsys.readouterr().out)['cvd'] == {}
+
+
+def test_cvd_safe_suggestions():
+    from perceptual_harmony import simulate, suggest, SPACES as SP
+    report, found = suggest(LUNENBURG, n=1, cvd_safe=True)
+    new = parse_hex(found[0].hex)
+    for kind in ('protanopia', 'deuteranopia', 'tritanopia'):
+        for c in report.palette:
+            assert SP['oklch'].delta_e(simulate(new, kind), simulate(c.rgb, kind)) >= 0.06
+
+
 # ---- suggestions ------------------------------------------------------------------------------
 def test_suggestions_are_inside_distinct_and_meet_contrast():
     from perceptual_harmony import suggest

@@ -312,3 +312,47 @@ def render_colormap_svg(report: ColormapReport, title: str = '', layout: str = '
         out.append(f'<text x="{px0 - 50}" y="{py1 + 100 + i * 24}" fill="{INK}" font-size="14">{escape(line)}</text>')
     out.append('</svg>')
     return '\n'.join(out)
+
+
+def render_cvd_svg(report: Report, title: str = '') -> str:
+    """Swatches of every colour in normal vision and under simulated protanopia, deuteranopia and
+    tritanopia (Machado et al. 2009), with the closest pair for each. 640 px wide."""
+    from .cvd import CVD_TYPES, simulate
+    sp = report.space
+    colours = report.palette + report.candidates
+    W, x_lab, x0, sw, sh, gap = 640, 28, 200, 92, 34, 12
+    cols = ['normal'] + list(CVD_TYPES)
+    y0 = 108
+    rows_h = len(colours) * (sh + 8)
+    H = y0 + rows_h + 40 + 24 * len(report.cvd) + 40
+    fmt = (lambda v: f'{v:.3f}') if sp.l_scale != 1 else (lambda v: f'{v:.1f}')
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
+           f'font-family="-apple-system, \'Segoe UI\', Helvetica, Arial, sans-serif">',
+           f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
+           f'<text x="{x_lab}" y="40" fill="{INK}" font-size="22" font-weight="600">'
+           f'{escape(title or "Colour-vision deficiency, simulated")}</text>',
+           f'<text x="{x_lab}" y="64" fill="{MUTED}" font-size="13">Dichromacy simulated as in Machado, '
+           f'Oliveira &amp; Fernandes (2009).</text>']
+    for j, name in enumerate(cols):
+        out.append(f'<text x="{x0 + j * (sw + gap) + sw / 2:.0f}" y="{y0 - 12}" fill="{INK}" font-size="13" '
+                   f'font-weight="600" text-anchor="middle">{name}</text>')
+    for i, c in enumerate(colours):
+        y = y0 + i * (sh + 8)
+        weight = 600 if c.role == 'candidate' else 400
+        out.append(f'<text x="{x_lab}" y="{y + sh / 2:.0f}" fill="{INK}" font-size="14" font-weight="{weight}" '
+                   f'dominant-baseline="central">{escape(c.label[:22])}</text>')
+        for j, name in enumerate(cols):
+            rgb = c.rgb if name == 'normal' else simulate(c.rgb, name)
+            out.append(f'<rect x="{x0 + j * (sw + gap)}" y="{y}" width="{sw}" height="{sh}" rx="5" '
+                       f'fill="{to_hex(rgb)}" stroke="{GRID}"/>')
+    y = y0 + rows_h + 30
+    out.append(f'<text x="{x_lab}" y="{y}" fill="{INK}" font-size="14" font-weight="600">Closest pairs</text>')
+    for kind, pairs in report.cvd.items():
+        y += 24
+        pr = pairs[0]
+        flag = ' — close' if report.cvd_threshold and pr.delta_e < report.cvd_threshold else ''
+        out.append(f'<text x="{x_lab}" y="{y}" fill="{INK}" font-size="13">{kind}: '
+                   f'{escape(pr.a)} / {escape(pr.b)}, dE {fmt(pr.delta_e)} '
+                   f'(normal vision {fmt(pr.normal)}){flag}</text>')
+    out.append('</svg>')
+    return '\n'.join(out)

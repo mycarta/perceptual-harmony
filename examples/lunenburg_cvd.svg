@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="512" viewBox="0 0 640 512" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect width="640" height="512" fill="#ffffff"/>
+<text x="28" y="40" fill="#1f2328" font-size="22" font-weight="600">Lunenburg event palette, simulated dichromacy</text>
+<text x="28" y="64" fill="#57606a" font-size="13">Dichromacy simulated as in Machado, Oliveira &amp; Fernandes (2009).</text>
+<text x="246" y="96" fill="#1f2328" font-size="13" font-weight="600" text-anchor="middle">normal</text>
+<text x="350" y="96" fill="#1f2328" font-size="13" font-weight="600" text-anchor="middle">protanopia</text>
+<text x="454" y="96" fill="#1f2328" font-size="13" font-weight="600" text-anchor="middle">deuteranopia</text>
+<text x="558" y="96" fill="#1f2328" font-size="13" font-weight="600" text-anchor="middle">tritanopia</text>
+<text x="28" y="125" fill="#1f2328" font-size="14" font-weight="400" dominant-baseline="central">sky-blue</text>
+<rect x="200" y="108" width="92" height="34" rx="5" fill="#4e7fcc" stroke="#d0d7de"/>
+<rect x="304" y="108" width="92" height="34" rx="5" fill="#5e85cf" stroke="#d0d7de"/>
+<rect x="408" y="108" width="92" height="34" rx="5" fill="#4c79ca" stroke="#d0d7de"/>
+<rect x="512" y="108" width="92" height="34" rx="5" fill="#00909c" stroke="#d0d7de"/>
+<text x="28" y="167" fill="#1f2328" font-size="14" font-weight="400" dominant-baseline="central">sky-light</text>
+<rect x="200" y="150" width="92" height="34" rx="5" fill="#6b9be8" stroke="#d0d7de"/>
+<rect x="304" y="150" width="92" height="34" rx="5" fill="#7ca1eb" stroke="#d0d7de"/>
+<rect x="408" y="150" width="92" height="34" rx="5" fill="#6d95e6" stroke="#d0d7de"/>
+<rect x="512" y="150" width="92" height="34" rx="5" fill="#21acb7" stroke="#d0d7de"/>
+<text x="28" y="209" fill="#1f2328" font-size="14" font-weight="400" dominant-baseline="central">green</text>
+<rect x="200" y="192" width="92" height="34" rx="5" fill="#85bd5a" stroke="#d0d7de"/>
+<rect x="304" y="192" width="92" height="34" rx="5" fill="#c4b151" stroke="#d0d7de"/>
+<rect x="408" y="192" width="92" height="34" rx="5" fill="#bcac60" stroke="#d0d7de"/>
+<rect x="512" y="192" width="92" height="34" rx="5" fill="#86b6a7" stroke="#d0d7de"/>
+<text x="28" y="251" fill="#1f2328" font-size="14" font-weight="400" dominant-baseline="central">green-dark</text>
+<rect x="200" y="234" width="92" height="34" rx="5" fill="#639326" stroke="#d0d7de"/>
+<rect x="304" y="234" width="92" height="34" rx="5" fill="#9a8812" stroke="#d0d7de"/>
+<rect x="408" y="234" width="92" height="34" rx="5" fill="#938430" stroke="#d0d7de"/>
+<rect x="512" y="234" width="92" height="34" rx="5" fill="#658d7e" stroke="#d0d7de"/>
+<text x="28" y="293" fill="#1f2328" font-size="14" font-weight="400" dominant-baseline="central">magenta</text>
+<rect x="200" y="276" width="92" height="34" rx="5" fill="#6d366d" stroke="#d0d7de"/>
+<rect x="304" y="276" width="92" height="34" rx="5" fill="#31466f" stroke="#d0d7de"/>
+<rect x="408" y="276" width="92" height="34" rx="5" fill="#414d6b" stroke="#d0d7de"/>
+<rect x="512" y="276" width="92" height="34" rx="5" fill="#703c4c" stroke="#d0d7de"/>
+<text x="28" y="335" fill="#1f2328" font-size="14" font-weight="400" dominant-baseline="central">lavender</text>
+<rect x="200" y="318" width="92" height="34" rx="5" fill="#b998dd" stroke="#d0d7de"/>
+<rect x="304" y="318" width="92" height="34" rx="5" fill="#8ba5e0" stroke="#d0d7de"/>
+<rect x="408" y="318" width="92" height="34" rx="5" fill="#91a6db" stroke="#d0d7de"/>
+<rect x="512" y="318" width="92" height="34" rx="5" fill="#b4a2b1" stroke="#d0d7de"/>
+<text x="28" y="390" fill="#1f2328" font-size="14" font-weight="600">Closest pairs</text>
+<text x="28" y="414" fill="#1f2328" font-size="13">protanopia: sky-light / lavender, dE 0.028 (normal vision 0.103) — close</text>
+<text x="28" y="438" fill="#1f2328" font-size="13">deuteranopia: sky-light / lavender, dE 0.072 (normal vision 0.103)</text>
+<text x="28" y="462" fill="#1f2328" font-size="13">tritanopia: sky-blue / green-dark, dE 0.069 (normal vision 0.249)</text>
+</svg>
