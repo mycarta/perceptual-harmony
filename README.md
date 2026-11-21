@@ -34,6 +34,24 @@ in others is reported as borderline.
 The templates are one model of harmony, and the report is information, not a rule. A colour
 outside a template, or borderline, may still be the right choice. The designer's eye decides.
 
+## Web page
+
+[`docs/index.html`](docs/index.html) runs the same package in the browser, with
+[Pyodide](https://pyodide.org). Paste colours or a CSS `:root` block, then check the palette or ask
+for suggestions. It shows the hue wheel, the colour-vision swatches, the full report and the
+suggestions as CSS. Nothing leaves the browser; the first visit downloads about 14 MB.
+
+To try it locally, serve the folder, since browsers do not load the package from a `file://`
+page:
+
+```sh
+python3 -m http.server --directory docs
+```
+
+then open <http://localhost:8000>. Adding `?example=windmill` (or `lunenburg`, `dandelions`,
+`okabe`, `koppen`) loads an example. After changing the package, run `python docs/build_bundle.py`
+to update the copy the page loads; the test suite checks that it is current.
+
 ## Install
 
 From a clone of this repository:

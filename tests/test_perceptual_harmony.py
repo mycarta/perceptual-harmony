@@ -310,6 +310,16 @@ def test_cli_suggest(capsys):
     assert '--new-1: oklch(' in capsys.readouterr().out
 
 
+# ---- web page ---------------------------------------------------------------------------------
+def test_web_bundle_is_current():
+    """docs/perceptual_harmony.json must match the source; run python docs/build_bundle.py."""
+    import runpy
+    from pathlib import Path
+    root = Path(__file__).parent.parent
+    build = runpy.run_path(str(root / 'docs' / 'build_bundle.py'))
+    assert (root / 'docs' / 'perceptual_harmony.json').read_text(encoding='utf-8') == build['bundle']()
+
+
 # ---- outputs ----------------------------------------------------------------------------------
 def test_svg_is_well_formed():
     report = check(WINDMILL + ['a & b=#000000'], ['#94a0f0'], background='#1a2e3d')
