@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "perceptual-harmony"
+dynamic = ["version"]
+description = "Hue harmony templates (Cohen-Or et al. 2006) in perceptual colour spaces: OKLCH, CIELCh, CAM02-UCS."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Matteo Niccoli"}]
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["colour", "color", "harmony", "palette", "perceptual", "oklch", "cielab", "cam02-ucs", "visualization"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Multimedia :: Graphics",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "colorspacious", "numpy"]
+
+[project.scripts]
+perceptual-harmony = "perceptual_harmony.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "perceptual_harmony.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

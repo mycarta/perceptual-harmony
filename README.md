@@ -1,0 +1,199 @@
+# perceptual-harmony
+
+Check whether the colours of a palette are harmonious, measured in a perceptual colour space.
+
+The tool fits the harmonic hue templates of Cohen-Or et al. (2006) to a palette. The templates
+build on Matsuda's earlier work. Hue, lightness and chroma are measured in OKLCH, CIELCh or
+CAM02-UCS, not in HSL or HSV. For each colour the tool also reports lightness, chroma, its
+colour difference to the nearest palette colour and, optionally, its WCAG 2 contrast against a
+background. It can judge candidate colours against an existing palette, which is the usual
+question when a figure needs one more colour.
+
+The library uses only the Python standard library (Python 3.9 or newer).
+
+> Status: early development (0.1.0.dev0). Suggesting new colours and colour-vision-deficiency
+> checks are planned and not yet implemented.
+
+## Why measure harmony in a perceptual space
+
+The harmonic templates are defined on a hue wheel, so the verdict depends on what "hue" means.
+HSL and HSV hue are angles in a transformed RGB cube. Equal steps there are not equal steps of
+perceived hue, so a colour can sit comfortably inside a template in HSL and outside it to the
+eye. Perceptual spaces were built to make distances and angles track perception more closely.
+
+They do not all agree, though, and the difference can change the answer. In the Windmill
+example below, the same candidate colour is 12° inside the template in OKLCH and 2° outside it
+in CIELCh. The tool therefore lets you choose the space and reports the margin in degrees, not
+just pass or fail.
+
+## Install
+
+From a clone of this repository:
+
+```sh
+pip install .
+```
+
+## Command line
+
+```sh
+perceptual-harmony check 'board blue=#30859e' 'pale label=#c5d9e8' 'gold=#f5e642' 'hit red=#ef9a9a' \
+    -c 'periwinkle=#94a0f0' -c 'cyan=#60ccdb' \
+    --background '#1a2e3d' --space oklch --svg wheel.svg
+```
+
+Colours are hex codes, optionally labelled as `label=#hex`. Palette colours are positional.
+Each `-c` adds a candidate to judge against the palette. Other options:
+
+| option | meaning |
+|---|---|
+| `-s`, `--space` | `oklch` (default), `cielch` or `cam02ucs` |
+| `-t`, `--template` | judge against this template (`i V L I T Y X`) instead of the best-fitting one |
+| `-r`, `--rotation` | fix the template's rotation, in degrees (the centre of its first sector) |
+| `-b`, `--background` | add WCAG 2 contrast ratios against this colour |
+| `--neutral-chroma` | chroma below which a colour counts as neutral and is ignored by the fit |
+| `--svg PATH` | also write the hue-wheel figure |
+| `--json` | print the report as JSON |
+
+`perceptual-harmony templates` lists the templates and their sectors.
+
+## Python
+
+```python
+from perceptual_harmony import check, render_svg
+
+report = check(['#30859e', '#c5d9e8', '#f5e642', '#ef9a9a'],
+               candidates=['periwinkle=#94a0f0'],
+               space='cam02ucs', background='#1a2e3d')
+
+report.chosen                 # best Fit: template, rotation, cost, sector ranges
+report.fits                   # every template, best first
+report.candidates[0].margin   # degrees inside (+) or outside (-) the template
+print(report.to_text())
+open('wheel.svg', 'w').write(render_svg(report))
+```
+
+## Method
+
+**Templates.** Cohen-Or et al. (2006) use eight of Matsuda's templates; the tool uses the
+seven with hue sectors:
+
+| | sectors |
+|---|---|
+| i | one 18° sector |
+| V | one 93.6° sector |
+| L | an 18° sector and a 79.2° sector, 90° apart |
+| I | two opposite 18° sectors |
+| T | one 180° sector |
+| Y | a 93.6° sector and an opposite 18° sector |
+| X | two opposite 93.6° sectors |
+
+Matsuda's eighth template, N, is for greys and has no hue sector. A template may be rotated to
+any angle.
+
+**Fitting.** Each colour's distance to a template is the angle from its hue to the nearest
+sector edge, or zero if its hue is inside a sector. Distances are weighted by chroma, as the
+paper weights them by saturation. The cost is the chroma-weighted mean of the distances, in
+degrees. For a given template the cost is piecewise linear in the rotation. Its minimum
+therefore occurs where some hue sits exactly on a sector edge, and trying every such rotation
+finds the global minimum exactly. When several rotations fit perfectly, the tool picks the one
+whose worst-placed colour is furthest inside its sector. The best template is the one with the
+lowest cost; ties go to the narrowest template. Wider templates fit more easily, so the report
+lists every template, not only the best.
+
+**Neutrals.** Hue is unstable and meaningless for colours near the grey axis. Colours with
+chroma below a threshold are reported as neutral and left out of the fit. The default threshold
+is 0.015 in OKLCH, 4 in CIELCh and 2.5 in CAM02-UCS.
+
+**Colour spaces.**
+
+- **OKLCH** (Ottosson 2020). Computed from sRGB.
+- **CIELCh**. CIELAB with a D65 white. Its colour difference is CIE76 ΔE.
+- **CAM02-UCS** (Luo, Cui & Li 2006), on CIECAM02. The viewing conditions match the defaults of
+  the `colorspacious` package: adapting luminance 64/π/5 cd/m², background Y<sub>b</sub> = 20,
+  average surround. The test suite checks the results against `colorspacious`.
+
+**Distinctness and contrast.** For each colour the tool reports the nearest palette colour and
+the Euclidean colour difference to it, in the chosen space. The report also gives a rough
+just-noticeable difference for each space. With a background, it reports the WCAG 2 contrast
+ratio.
+
+**The figure.** The wheel is the a–b plane of the chosen space, with +a to the right and hues
+counter-clockwise. Each colour sits at a radius proportional to its chroma. The outer ring is
+drawn at one lightness and one chroma for every hue (the most colourful ring that stays inside
+the sRGB gamut), so the ring itself is perceptually even.
+
+## Worked example: Windmill
+
+[`examples/windmill.py`](examples/windmill.py) comes from choosing one more colour for the game
+Windmill. The colour marks 8 added wind directions in the replay compass. It had to be clearly
+different from the ocean blues already on screen and still sit well with the palette.
+
+The palette fits the X template in all three spaces. The blues fill one sector, and the gold
+and the red fill the opposite one. The first candidate, cyan, falls among the blues and is too
+similar to them. Periwinkle sits near the far edge of the blue sector. It is clearly different,
+yet still inside the template in OKLCH (by 12°) and CAM02-UCS (by 19°). In CIELCh it is 2°
+outside, which is the space dependence described above.
+
+| OKLCH | CIELCh |
+|---|---|
+| ![Windmill palette in OKLCH](examples/windmill_oklch.png) | ![Windmill palette in CIELCh](examples/windmill_cielch.png) |
+
+## Worked example: a palette picked from a watercolour
+
+[`examples/lunenburg.py`](examples/lunenburg.py) checks the event palette of
+[lunenburg.fingerpost.ca](https://lunenburg.fingerpost.ca), a community events site. Its colours
+were picked from the page banner, a watercolour of a Lunenburg house:
+
+- two blues from the sky;
+- two greens from the clapboard;
+- a magenta and a lavender from the tower.
+
+The palette is harmonious. In OKLCH it fits the Y template exactly: the greens fill the narrow
+sector, and the blues, magenta and lavender fill the wide one. It also fits X exactly, and it
+fits in CIELCh and CAM02-UCS too. The blues sit only about 1° inside the edge of Y's wide
+sector, so X gives the palette more room.
+
+![Lunenburg event palette in OKLCH](examples/lunenburg_oklch.png)
+
+## Background
+
+The method continues earlier work on perceptual colour by Matteo Niccoli on the MyCarta blog.
+In particular:
+
+- Matteo Niccoli, *Perceptual rainbow palette – the goodies*, MyCarta, 6 March 2013.
+  <https://mycartablog.com/2013/03/06/perceptual-rainbow-palette-the-goodies/>
+
+That post presents cubeYF, a rainbow palette with a monotonic, perceptually ordered lightness
+profile built in CIELAB. The method is in the companion post
+[*Perceptual rainbow palette – the method*](https://mycartablog.com/2013/02/21/perceptual-rainbow-palette-the-method/).
+The post's "mood" section already used the harmonic templates of Cohen-Or et al. to judge
+cubeYF's hue spread, which "looks very close to a T template rotated by 180 degrees". This
+library automates that kind of judgement and makes it perceptual.
+
+## References
+
+- Cohen-Or, D., Sorkine, O., Gal, R., Leyvand, T., Xu, Y.-Q. (2006). Color harmonization.
+  *ACM Transactions on Graphics* 25(3), 624–630 (Proc. SIGGRAPH 2006).
+  <https://igl.ethz.ch/projects/color-harmonization/harmonization.pdf>
+- Matsuda, Y. (1995). *Color design*. Asakura Shoten.
+- Ottosson, B. (2020). A perceptual color space for image processing.
+  <https://bottosson.github.io/posts/oklab/>
+- Moroney, N., Fairchild, M. D., Hunt, R. W. G., Li, C., Luo, M. R., Newman, T. (2002).
+  The CIECAM02 color appearance model. *Proc. IS&T/SID 10th Color Imaging Conference*, 23–27.
+- Luo, M. R., Cui, G., Li, C. (2006). Uniform colour spaces based on CIECAM02 colour appearance
+  model. *Color Research & Application* 31(4), 320–330.
+- W3C (2018). Web Content Accessibility Guidelines (WCAG) 2.1: contrast ratio.
+  <https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio>
+
+## Development
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+.venv/bin/python -m pytest
+```
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
