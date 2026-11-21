@@ -177,6 +177,13 @@ The post's "mood" section already used the harmonic templates of Cohen-Or et al.
 cubeYF's hue spread, which "looks very close to a T template rotated by 180 degrees". This
 library automates that kind of judgement and makes it perceptual.
 
+The same perceptual approach to evaluating colours is set out as a tutorial, with a Jupyter
+notebook, in *The Leading Edge*'s Geophysical tutorial series:
+
+- Niccoli, M. (2014). Evaluate and compare colormaps. *The Leading Edge* 33(8), 910–912.
+  <https://doi.org/10.1190/tle33080910.1>. Notebook:
+  <https://github.com/seg/tutorials-2014/tree/master/1408_Evaluate_and_compare_colormaps>
+
 ## References
 
 - Cohen-Or, D., Sorkine, O., Gal, R., Leyvand, T., Xu, Y.-Q. (2006). Color harmonization.
