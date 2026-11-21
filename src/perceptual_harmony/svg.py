@@ -241,10 +241,22 @@ def render_colormap_svg(report: ColormapReport, title: str = '', layout: str = '
              f'" fill="none" stroke="{MUTED}" stroke-width="1" stroke-opacity="0.6"/>')
     for (x, y), hx in zip(pts, report.hexes):
         g.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="{hx}"/>')
-    for (x, y), hx, label in ((pts[0], report.hexes[0], 'start'), (pts[-1], report.hexes[-1], 'end')):
+    # When both ends sit close together (e.g. both near grey), put each label on the side its own
+    # path leaves from, above or below, and away from the path horizontally.
+    close = math.dist(pts[0], pts[-1]) < 60
+    k = min(12, len(pts) - 1)
+    ends = ((pts[0], pts[k], report.hexes[0], 'start'), (pts[-1], pts[-1 - k], report.hexes[-1], 'end'))
+    for (x, y), (nx, ny), hx, label in ends:
         g.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="7" fill="{hx}" stroke="{INK}" stroke-width="1.5"/>')
-        g.append(f'<text x="{x + 11:.1f}" y="{y:.1f}" fill="{INK}" font-size="13" dominant-baseline="central" '
-                 f'paint-order="stroke" stroke="#ffffff" stroke-width="3">{label}</text>')
+        if close:
+            right = nx < x                          # path leaves to the left: label on the right
+            lx, ly = x + (11 if right else -11), y + (13 if ny > y else -13)
+            anchor = 'start' if right else 'end'
+        else:
+            lx, ly, anchor = x + 11, y, 'start'
+        g.append(f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{INK}" font-size="13" text-anchor="{anchor}" '
+                 f'dominant-baseline="central" paint-order="stroke" stroke="#ffffff" stroke-width="3">'
+                 f'{label}</text>')
     g.append('</g>')
     out += g
     out.append(f'<text x="{cx}" y="{cy + 288}" fill="{MUTED}" font-size="12" text-anchor="middle">'

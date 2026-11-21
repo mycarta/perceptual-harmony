@@ -262,12 +262,18 @@ deviation from 100% perceptual". The numbers show the trade:
   fall of 18 L\* is where cube1 departs from a monotonic profile.
 
 The same post also placed jet in a T template; its hues span 235° in OKLCH, and its lightness
-rises and falls by 58 points. For a colormap, harmony is a secondary property: the lightness
-profile comes first. So each figure shows both.
+rises and falls by 58 points. The post's comparison also included an industry spectrum
+colormap. Matplotlib's `nipy_spectral`, a similar spectrum (called `spectral` before matplotlib
+2.0), stands in for it here. It is also the spectral colormap that the *Leading Edge* tutorial
+(Niccoli 2014, see [Background](#background)) takes apart. Its hues span 298–318° across the four spaces, and its lightness
+rises and falls several times, by up to 50 L\*. For a colormap, harmony is a secondary property:
+the lightness profile comes first. So each figure shows both.
 
 | cubeYF | cube1 |
 |---|---|
 | ![cubeYF in OKLCH](examples/cubeyf_oklch.png) | ![cube1 in OKLCH](examples/cube1_oklch.png) |
+
+![nipy_spectral in OKLCH](examples/nipy_spectral_oklch.png)
 
 The cubeYF and cube1 samples in [`examples/data/cubeyf.csv`](examples/data/cubeyf.csv) and
 [`examples/data/cube1.csv`](examples/data/cube1.csv) are reused with permission. Please credit
