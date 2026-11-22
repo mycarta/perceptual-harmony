@@ -330,12 +330,6 @@ class ColormapReport:
     robustness: List['ColormapReport'] = field(default_factory=list)
 
     @property
-    def inside_fraction(self) -> float:
-        """Share of chromatic samples inside the template, 0 to 1."""
-        m = [v for v in self.margins if v is not None]
-        return sum(v >= 0 for v in m) / len(m) if m else 1.0
-
-    @property
     def hue_span(self) -> float:
         """Smallest arc of the hue wheel, in degrees, that holds every chromatic sample."""
         hues = sorted(h for (_, _, h), n in zip(self.lch, self.neutral) if not n)
@@ -399,8 +393,7 @@ class ColormapReport:
             for r in [self] + self.robustness:
                 wm = r.worst_margin
                 out.append(f'   {r.space.label:13} hue span {r.hue_span:4.0f} deg  cost {r.chosen.cost:6.2f} deg  '
-                           f'worst {abs(wm):5.1f} deg {"in " if wm >= 0 else "out"}  '
-                           f'samples inside {100 * r.inside_fraction:3.0f}%  best: {r.fits[0].template.name}')
+                           f'worst {abs(wm):5.1f} deg {"in " if wm >= 0 else "out"}  best: {r.fits[0].template.name}')
         return '\n'.join(out)
 
 

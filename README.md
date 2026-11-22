@@ -162,6 +162,13 @@ triples in 0–1). It reports the template fit, the hue span and the largest fal
 `render_colormap_svg` draws the samples as a path on the wheel, next to their lightness profile.
 Both report the same measures in the other spaces of the robustness check.
 
+The fit uses every sample, so the blends between a colormap's key colours count too. Moving
+from one sector of a template to another crosses the gap between them, so a colormap blended
+from harmonious colours can land outside a two-sector template where they meet. Windmill's five
+colours fit X exactly as a palette; blended in OKLab into a colormap (ordered by lightness), the
+stretches between them are outside X by up to 40° in OKLCH. To judge the harmony of the colours a colormap is built from, check its
+key colours as a palette with `check`.
+
 ## Method
 
 **Templates.** Cohen-Or et al. (2006) use eight of Matsuda's templates; the tool uses the
