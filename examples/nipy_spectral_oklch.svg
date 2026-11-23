@@ -941,8 +941,7 @@
 <rect x="1128.28" y="394" width="2.32" height="22" fill="#cccccc"/>
 <text x="690" y="434" fill="#57606a" font-size="12">start</text>
 <text x="1130" y="434" fill="#57606a" font-size="12" text-anchor="end">end</text>
-<text x="640" y="480" fill="#1f2328" font-size="14">Template: T (best fit: X). Mean miss 16.0°. Sectors 322°–142°.</text>
-<text x="640" y="504" fill="#1f2328" font-size="14">Hue span 308°; worst sample 89.9° outside the template.</text>
-<text x="640" y="528" fill="#1f2328" font-size="14">L from 0 to 85, peak 92; largest reversal 38.85 (above a just-noticeable difference).</text>
-<text x="640" y="552" fill="#1f2328" font-size="14">Across 4 colour spaces: hue span 298°–318°, T mean miss 6.7°–16.0°.</text>
+<text x="640" y="480" fill="#1f2328" font-size="14">Template: T (closest: X). Sectors 322°–142°. Hue span 308°.</text>
+<text x="640" y="504" fill="#1f2328" font-size="14">L from 0 to 85, peak 92; largest reversal 38.85 (above a just-noticeable difference).</text>
+<text x="640" y="528" fill="#1f2328" font-size="14">Across 4 colour spaces: hue span 298°–318°; closest template X in 4.</text>
 </svg>

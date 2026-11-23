@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="1122" viewBox="0 0 640 1122" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-<rect width="640" height="1122" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="1098" viewBox="0 0 640 1098" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect width="640" height="1098" fill="#ffffff"/>
 <text x="28" y="40" fill="#1f2328" font-size="22" font-weight="600">cubeYF: T template in OKLCH</text>
 <g transform="translate(320,332)">
 <path d="M 230.00 -0.00 A 230 230 0 0 0 229.62 -13.24 L 206.66 -11.92 A 207.0 207.0 0 0 1 207.00 -0.00 Z" fill="#f08aa8"/>
@@ -941,8 +941,7 @@
 <rect x="597.96" y="914" width="2.64" height="22" fill="#d1eb5b"/>
 <text x="78" y="954" fill="#57606a" font-size="12">start</text>
 <text x="600" y="954" fill="#57606a" font-size="12" text-anchor="end">end</text>
-<text x="28" y="1000" fill="#1f2328" font-size="14">Best template: T. Mean miss 1.0°. Sectors 129°–309°.</text>
-<text x="28" y="1024" fill="#1f2328" font-size="14">Hue span 201°; worst sample 11.3° outside the template.</text>
-<text x="28" y="1048" fill="#1f2328" font-size="14">L from 42 to 89; largest reversal 0.06 (below a just-noticeable difference).</text>
-<text x="28" y="1072" fill="#1f2328" font-size="14">Across 4 colour spaces: hue span 201°–209°, T mean miss 1.0°–2.6°.</text>
+<text x="28" y="1000" fill="#1f2328" font-size="14">Closest template: T. Sectors 129°–309°. Hue span 201°.</text>
+<text x="28" y="1024" fill="#1f2328" font-size="14">L from 42 to 89; largest reversal 0.06 (below a just-noticeable difference).</text>
+<text x="28" y="1048" fill="#1f2328" font-size="14">Across 4 colour spaces: hue span 201°–209°; closest template T in 3, X in 1.</text>
 </svg>

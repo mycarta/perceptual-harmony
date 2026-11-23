@@ -130,6 +130,14 @@ candidate. It ends with CSS custom properties, ready to paste:
 With `--cvd-safe`, each suggestion must also stay distinct from the palette, and from the
 other suggestions, under all three simulated dichromacies.
 
+To start a palette from scratch, give one colour and a template:
+
+```sh
+perceptual-harmony suggest '#30859e' -t X -n 4
+```
+
+The colour sits at the centre of one sector, and the suggestions fill the template around it.
+
 The suggestions are options to look at, not answers. Distance from the palette is one goal
 among several, and the designer's eye decides.
 
@@ -158,16 +166,18 @@ print(css_block(found))       # --new-1: oklch(...);  /* #hex */
 ```
 
 For a continuous colormap, `check_colormap` takes the ordered samples (hex strings or sRGB
-triples in 0–1). It reports the template fit, the hue span and the largest fall in lightness.
-`render_colormap_svg` draws the samples as a path on the wheel, next to their lightness profile.
-Both report the same measures in the other spaces of the robustness check.
+triples in 0–1). It reports the closest template and its sectors, the hue span and the lightness
+profile: the range, any interior peak or low, and the largest fall. `render_colormap_svg` draws
+the samples as a path on the wheel, next to their lightness profile. Both give the same
+measures in the other spaces of the robustness check.
 
-The fit uses every sample, so the blends between a colormap's key colours count too. Moving
-from one sector of a template to another crosses the gap between them, so a colormap blended
-from harmonious colours can land outside a two-sector template where they meet. Windmill's five
-colours fit X exactly as a palette; blended in OKLab into a colormap (ordered by lightness), the
-stretches between them are outside X by up to 40° in OKLCH. To judge the harmony of the colours a colormap is built from, check its
-key colours as a palette with `check`.
+There is no harmony score for a colormap. A colormap blends its colours, and a blend from one
+sector of a template to another crosses the gap between them, so any score over the samples
+counts the blends as misses. Windmill's five colours fit X exactly as a palette; blended in OKLab
+into a colormap (ordered by lightness), the stretches between them are outside X by up to 40° in
+OKLCH. The wheel shows where the path runs, and the hue span says how wide it is. To judge the
+colours a colormap is built from, check its key colours as a palette with `check`. Lightness is
+different: a colormap should be perceptually ordered, so its lightness is measured.
 
 ## Method
 
@@ -368,11 +378,9 @@ rainbow colormap built in CIELAB with a monotonic lightness profile (see
 T template rotated by 180 degrees", "also exceeding a bit 180 degrees". The tool now puts numbers
 on that.
 
-- In OKLCH and CAM02-UCS the best template is T, with a mean miss of about 1°. The hues span
-  201° and 206°: a little more than the 180° of T.
-- In CIELCh the hues span 209°, and X fits slightly better than T.
-- Across the four spaces of the robustness check, the hues span 201–209° and T misses by 1.0–2.6°
-  on average.
+- The hues span 201° in OKLCH, 206° in CAM02-UCS and 209° in CIELCh: a little more than the 180°
+  of T, as the post said. T is the closest template in OKLCH and CAM02-UCS, X in CIELCh.
+- Across the four spaces of the robustness check, the hues span 201–209°.
 - Lightness rises at every step except a fall of 0.12 L\* near the bright end, far below a
   just-noticeable difference. In CIELAB it runs from L\* 30 to 89.
 
@@ -380,19 +388,18 @@ The same post offered cube1 as an alternative with "a slightly superior visual h
 "due to the addition of a red-like color at the high lightness end", "at the cost of a modest
 deviation from 100% perceptual". The numbers show the trade:
 
-- cube1's hues span 273° in OKLCH (269° in CIELCh), 60–70° more than cubeYF's. X fits best in
-  all three spaces; T misses by 6–8° on average. Across the four robustness spaces the span is
-  266–282°, so no space brings cube1 within T.
+- cube1's hues span 273° in OKLCH (269° in CIELCh), 60–70° more than cubeYF's and far beyond
+  the 180° of T. Across the four robustness spaces the span is 266–282°.
 - Lightness rises to a peak of L\* 89 at the yellow-green and then falls to 71 at the orange end. That
   fall of 18 L\* is where cube1 departs from a monotonic profile.
 
 The same post also placed jet in a T template; its hues span 235° in OKLCH, and its lightness
-rises and falls by 58 points. The post's comparison also included an industry spectrum
-colormap. Matplotlib's `nipy_spectral`, a similar spectrum (called `spectral` before matplotlib
-2.0), stands in for it here. It is also the spectral colormap that the *Leading Edge* tutorial
-(Niccoli 2014, see [Background](#background)) takes apart. Its hues span 298–318° across the four spaces, and its lightness
-rises and falls several times, by up to 50 L\*. For a colormap, harmony is a secondary property:
-the lightness profile comes first. So each figure shows both.
+rises and falls by 58 points. The post's comparison also included an industry spectrum colormap.
+Matplotlib's `nipy_spectral`, a similar spectrum (called `spectral` before matplotlib 2.0),
+stands in for it here. It is also the spectral colormap that the *Leading Edge* tutorial
+(Niccoli 2014, see [Background](#background)) takes apart. Its hues span 298–318° across the
+four spaces, and its lightness rises and falls several times, by up to 50 L\*. For a colormap,
+harmony is a secondary property: the lightness profile comes first. So each figure shows both.
 
 | cubeYF | cube1 |
 |---|---|

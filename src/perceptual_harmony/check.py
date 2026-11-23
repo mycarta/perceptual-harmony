@@ -354,10 +354,6 @@ class ColormapReport:
             worst = max(worst, peak - v)
         return worst
 
-    @property
-    def worst_margin(self) -> float:
-        return min(m for m in self.margins if m is not None)
-
     def lightness_range_text(self, digits: int = 1) -> str:
         """'from A to B', plus any interior peak or low beyond the ends by more than a JND."""
         scale = self.space.l_scale
@@ -375,25 +371,23 @@ class ColormapReport:
         scale = sp.l_scale
         Ln = sp.axis_names[0]
         out = [f'{self.name or "Colormap"}: {len(self.hexes)} samples, {sp.label}', '',
-               'Template fits (cost = chroma-weighted mean hue deviation):']
+               'Templates, closest fit first:']
         for f in self.fits:
             mark = '*' if f.template is self.chosen.template else ' '
             secs = ', '.join(f'{a:.0f}-{b:.0f}' for a, b in f.sector_ranges())
-            out.append(f' {mark} {f.template.name}  rotation {f.rotation:6.1f}  cost {f.cost:6.2f} deg'
-                       f'  {"fits " if f.fits else "     "} sectors {secs}')
+            out.append(f' {mark} {f.template.name}  rotation {f.rotation:6.1f}  sectors {secs}')
         out += ['',
                 f'Hue span: {self.hue_span:.0f} degrees.',
-                f'Worst sample: {abs(self.worst_margin):.1f} degrees '
-                f'{"inside" if self.worst_margin >= 0 else "outside"} the {self.chosen.template.name} template.',
                 f'Lightness {Ln} {self.lightness_range_text()}; largest reversal '
                 f'{self.lightness_reversal * scale:.2f} (rough just-noticeable dE: {sp.jnd * scale:g}).']
         if self.robustness:
-            t = self.chosen.template.name
-            out += ['', f'Robustness: the {t} template refitted in each colour space:']
+            out += ['', 'In each colour space of the robustness check:']
             for r in [self] + self.robustness:
-                wm = r.worst_margin
-                out.append(f'   {r.space.label:13} hue span {r.hue_span:4.0f} deg  cost {r.chosen.cost:6.2f} deg  '
-                           f'worst {abs(wm):5.1f} deg {"in " if wm >= 0 else "out"}  best: {r.fits[0].template.name}')
+                out.append(f'   {r.space.label:13} hue span {r.hue_span:4.0f} deg  '
+                           f'closest template: {r.fits[0].template.name}')
+        out += ['', 'No harmony score: a colormap blends its colours, and blends between two sectors',
+                'of a template cross the gap between them. To judge the colours it is built from,',
+                'check its key colours as a palette.']
         return '\n'.join(out)
 
 

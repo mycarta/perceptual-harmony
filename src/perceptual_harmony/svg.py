@@ -222,7 +222,7 @@ def render_colormap_svg(report: ColormapReport, title: str = '', layout: str = '
     W, H = 1180, 640
     cx, cy, R = 320, 330, 230
     if narrow:
-        W, H, cy = 640, 1122, 332
+        W, H, cy = 640, 1098, 332
     ring_in, plot_r = R * 0.9, R * 0.84
     cmax = max(C for _, C, _ in report.lch) / 0.9
     scale = sp.l_scale
@@ -292,23 +292,22 @@ def render_colormap_svg(report: ColormapReport, title: str = '', layout: str = '
 
     # summary
     rev = report.lightness_reversal * scale
-    wm = report.worst_margin
     lines = [
-        (f'Best template: {fit.template.name}' if fit.template is report.fits[0].template else
-         f'Template: {fit.template.name} (best fit: {report.fits[0].template.name})')
-        + f'. Mean miss {fit.cost:.1f}°. Sectors '
-        + ', '.join(f'{a:.0f}°–{b:.0f}°' for a, b in fit.sector_ranges()) + '.',
-        f'Hue span {report.hue_span:.0f}°; worst sample {abs(wm):.1f}° '
-        f'{"inside" if wm >= 0 else "outside"} the template.',
+        (f'Closest template: {fit.template.name}' if fit.template is report.fits[0].template else
+         f'Template: {fit.template.name} (closest: {report.fits[0].template.name})')
+        + '. Sectors ' + ', '.join(f'{a:.0f}°–{b:.0f}°' for a, b in fit.sector_ranges())
+        + f'. Hue span {report.hue_span:.0f}°.',
         f'{Ln} {report.lightness_range_text(0)}; largest reversal {rev:.2f} '
         f'({"none" if rev == 0 else ("below" if rev < sp.jnd * scale else "above") + " a just-noticeable difference"}).',
     ]
     if report.robustness:
         allr = [report] + report.robustness
         spans = [r.hue_span for r in allr]
-        costs = [r.chosen.cost for r in allr]
-        lines.append(f'Across {len(allr)} colour spaces: hue span {min(spans):.0f}°–{max(spans):.0f}°, '
-                     f'{fit.template.name} mean miss {min(costs):.1f}°–{max(costs):.1f}°.')
+        best = {}
+        for r in allr:
+            best[r.fits[0].template.name] = best.get(r.fits[0].template.name, 0) + 1
+        lines.append(f'Across {len(allr)} colour spaces: hue span {min(spans):.0f}°–{max(spans):.0f}°; '
+                     'closest template ' + ', '.join(f'{t} in {k}' for t, k in best.items()) + '.')
     for i, line in enumerate(lines):
         out.append(f'<text x="{px0 - 50}" y="{py1 + 100 + i * 24}" fill="{INK}" font-size="14">{escape(line)}</text>')
     out.append('</svg>')
