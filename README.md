@@ -409,15 +409,21 @@ Matteo Niccoli and mycartablog.com.
 The method continues earlier work on perceptual colour by Matteo Niccoli on the MyCarta blog.
 In particular:
 
+- Matteo Niccoli, *The rainbow is dead…long live the rainbow! – Perceptual palettes, part 3*,
+  MyCarta, 6 October 2012.
+  <https://mycartablog.com/2012/10/06/the-rainbow-is-deadlong-live-the-rainbow-part-3/>
+- Matteo Niccoli, *Perceptual rainbow palette – the method*, MyCarta, 21 February 2013.
+  <https://mycartablog.com/2013/02/21/perceptual-rainbow-palette-the-method/>
 - Matteo Niccoli, *Perceptual rainbow palette – the goodies*, MyCarta, 6 March 2013.
   <https://mycartablog.com/2013/03/06/perceptual-rainbow-palette-the-goodies/>
 
-That post presents cubeYF, a rainbow palette with a monotonic, perceptually ordered lightness
-profile built in CIELAB. The method is in the companion post
-[*Perceptual rainbow palette – the method*](https://mycartablog.com/2013/02/21/perceptual-rainbow-palette-the-method/).
-The post's "mood" section already used the harmonic templates of Cohen-Or et al. to judge
-cubeYF's hue spread, which "looks very close to a T template rotated by 180 degrees". This
-library automates that kind of judgement and makes it perceptual.
+Part 3 traces the false edges seen in rainbow colormaps to inflection points in their lightness
+profile. That is why `check_colormap` reports falls in lightness and interior peaks and lows.
+The method post builds cubeYF in CIELAB, with a monotonic, perceptually ordered lightness
+profile, and the goodies post presents it. The goodies post's "mood" section already used the
+harmonic templates of Cohen-Or et al. to judge cubeYF's hue spread, which "looks very close to a
+T template rotated by 180 degrees". This library automates that kind of judgement and makes it
+perceptual.
 
 The same perceptual approach to evaluating colours is set out as a tutorial, with a Jupyter
 notebook, in *The Leading Edge*'s Geophysical tutorial series:
