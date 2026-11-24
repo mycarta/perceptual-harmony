@@ -5,8 +5,9 @@ Check whether the colours of a palette are harmonious, measured in a perceptual 
 It is meant for anyone choosing a small set of distinct colours that must work together: the
 palette of an app or a website, or the categories of a figure or map legend.
 
-The tool fits the harmonic hue templates of Cohen-Or et al. (2006) to a palette. The templates
-build on Matsuda's earlier work. Hue, lightness and chroma are measured in a perceptual colour
+The tool fits the harmonic hue templates of Cohen-Or et al. (2006),
+[*Color harmonization*](https://doi.org/10.1145/1141911.1141933) (SIGGRAPH 2006), to a palette. The templates build on Matsuda's
+earlier work. Hue, lightness and chroma are measured in a perceptual colour
 space (OKLCH by default), not in HSL or HSV, and each verdict is checked in several spaces. For
 each colour the tool also reports lightness, chroma, its
 colour difference to the nearest palette colour and, optionally, its contrast against a
@@ -442,8 +443,8 @@ notebook, in *The Leading Edge*'s Geophysical tutorial series:
 ## References
 
 - Cohen-Or, D., Sorkine, O., Gal, R., Leyvand, T., Xu, Y.-Q. (2006). Color harmonization.
-  *ACM Transactions on Graphics* 25(3), 624–630 (Proc. SIGGRAPH 2006).
-  <https://igl.ethz.ch/projects/color-harmonization/harmonization.pdf>
+  *ACM Transactions on Graphics* 25(3), 624–630 (Proc. SIGGRAPH 2006). <https://doi.org/10.1145/1141911.1141933>.
+  Author's copy: <https://igl.ethz.ch/projects/color-harmonization/harmonization.pdf>
 - Matsuda, Y. (1995). *Color design*. Asakura Shoten.
 - Okabe, M., Ito, K. (2008). Color Universal Design (CUD): how to make figures and presentations
   that are friendly to colorblind people. <https://jfly.uni-koeln.de/color/>
