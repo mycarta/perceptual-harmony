@@ -60,9 +60,26 @@ button:disabled { opacity: .5; cursor: wait; }
 pre { margin: 0; background: var(--code); border-radius: 6px; padding: 12px; overflow-x: auto;
   font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .css-head { display: flex; justify-content: space-between; align-items: center; }
-.css-head button { padding: 6px 10px; font-size: 13px; }
+.css-head > div { display: flex; gap: 6px; }
 .hidden { display: none; }
 .empty { color: var(--muted); }
+.tabs { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+.tabs button { flex: 1; border: 0; border-radius: 0; background: transparent; color: var(--ink); padding: 10px 6px; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.mode-hint { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
+.add-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.add-row input[type="color"] { width: 44px; height: 34px; padding: 2px; cursor: pointer; }
+.add-row button, .css-head button { padding: 7px 10px; font-size: 13px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 6px; }
+.swatch { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 2px 2px 3px; font-size: 12px; background: var(--bg); }
+.swatch i { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(127,127,127,.4); }
+.swatch span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.swatch button { border: 0; background: transparent; color: var(--muted); padding: 0 6px; font-size: 15px; line-height: 1; }
+.swatch.excluded { opacity: .45; }
+details { margin-top: 14px; }
+summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.examples { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
 footer { color: var(--muted); font-size: 13px; padding-top: 24px; padding-bottom: 32px; }
 footer p { margin: 4px 0; max-width: 820px; }
 </style>
@@ -77,76 +94,97 @@ footer p { margin: 4px 0; max-width: 820px; }
 
 <main>
   <form class="panel" id="form" autocomplete="off">
-    <label for="example">Example</label>
-    <select id="example">
-      <option value="">Choose an example…</option>
-      <option value="windmill">Windmill: one more colour for a game</option>
-      <option value="lunenburg">Lunenburg: a site's CSS, colours from a watercolour</option>
-      <option value="dandelions">Dandelions: a meadow game's board</option>
-      <option value="okabe">Okabe–Ito, as in R's palette.colors()</option>
-      <option value="koppen">Köppen–Geiger map colours (Sink &amp; Brikowski 2025)</option>
-    </select>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-check" aria-selected="true">Check my palette</button>
+      <button type="button" role="tab" id="tab-suggest" aria-selected="false">Suggest next colour</button>
+    </div>
+    <p class="mode-hint" id="mode-hint"></p>
 
-    <label for="palette">Palette <span class="hint">— one colour per line, or paste CSS with <code>--name: colour</code></span></label>
-    <textarea id="palette" rows="8" spellcheck="false" wrap="off" placeholder="board blue=#30859e&#10;gold=#f5e642&#10;accent=oklch(70% 0.12 250)"></textarea>
+    <label for="palette">Your colours <span class="hint">— one per line, any CSS colour, optionally named
+      (<code>gold=#f5e642</code>), or a pasted CSS block with <code>--name: colour</code></span></label>
+    <textarea id="palette" rows="7" spellcheck="false" wrap="off" placeholder="board blue=#30859e&#10;gold=#f5e642&#10;accent=oklch(70% 0.12 250)"></textarea>
+    <div class="add-row">
+      <input type="color" id="picker" value="#3b6fd8" aria-label="Pick a colour">
+      <button type="button" class="secondary" id="add-colour">Add colour</button>
+    </div>
+    <div class="swatches" id="swatches" aria-label="Colours read from the box"></div>
 
     <div id="css-options" class="hidden">
       <label for="exclude">Leave out properties <span class="hint">— e.g. ink*, paper*</span></label>
       <input id="exclude" spellcheck="false">
     </div>
 
-    <label for="candidates">Candidates <span class="hint">— colours to judge, optional</span></label>
-    <textarea id="candidates" rows="3" spellcheck="false" placeholder="periwinkle=#94a0f0"></textarea>
-
-    <div class="row">
-      <div>
-        <label for="background">Background</label>
-        <input id="background" spellcheck="false" placeholder="#ffffff or a property name">
-      </div>
-      <div>
-        <label for="space">Colour space</label>
-        <select id="space">
-          <option value="oklch">OKLCH</option>
-          <option value="cielch">CIELCh</option>
-          <option value="cam02ucs">CAM02-UCS</option>
-          <option value="cam16ucs">CAM16-UCS</option>
-          <option value="ipt">IPT</option>
-        </select>
-      </div>
+    <div data-mode="check">
+      <label for="candidates">Colours to judge <span class="hint">— optional: candidates checked against your colours</span></label>
+      <textarea id="candidates" rows="2" spellcheck="false" placeholder="periwinkle=#94a0f0"></textarea>
     </div>
-    <label for="template">Template</label>
-    <select id="template">
-      <option value="">Best fitting</option>
-      <option>i</option><option>V</option><option>L</option><option>I</option>
-      <option>T</option><option>Y</option><option>X</option>
-    </select>
 
-    <div class="row">
+    <label for="background">Background <span class="hint">— optional, for contrast</span></label>
+    <input id="background" spellcheck="false" placeholder="#ffffff or a property name">
+
+    <div class="row" data-mode="suggest">
       <div>
-        <label for="n">Suggest how many</label>
-        <input id="n" type="number" min="1" max="8" value="2">
+        <label for="n">How many</label>
+        <input id="n" type="number" min="1" max="8" value="1">
       </div>
       <div>
-        <label for="mincontrast">Min. contrast</label>
+        <label for="mincontrast">Min. contrast <span class="hint">WCAG 2</span></label>
         <input id="mincontrast" type="number" min="1" max="21" step="0.5" placeholder="e.g. 4.5">
       </div>
     </div>
-    <label class="check"><input type="checkbox" id="cvdsafe"> Suggestions distinct under colour-vision deficiency</label>
+
+    <details id="more">
+      <summary>More options</summary>
+      <div class="row">
+        <div>
+          <label for="space">Colour space</label>
+          <select id="space">
+            <option value="oklch">OKLCH</option>
+            <option value="cielch">CIELCh</option>
+            <option value="cam02ucs">CAM02-UCS</option>
+            <option value="cam16ucs">CAM16-UCS</option>
+            <option value="ipt">IPT</option>
+          </select>
+        </div>
+        <div>
+          <label for="template">Template</label>
+          <select id="template">
+            <option value="">Best fitting</option>
+            <option>i</option><option>V</option><option>L</option><option>I</option>
+            <option>T</option><option>Y</option><option>X</option>
+          </select>
+        </div>
+      </div>
+      <label class="check" data-mode="suggest"><input type="checkbox" id="cvdsafe"> Distinct under colour-vision deficiency</label>
+    </details>
 
     <div class="buttons">
-      <button type="submit" id="btn-check" disabled>Check</button>
-      <button type="button" id="btn-suggest" class="secondary" disabled>Suggest colours</button>
+      <button type="submit" id="btn-run" disabled>Check palette</button>
     </div>
     <div id="status">Loading Python in the browser (the first visit downloads about 14 MB)…</div>
+
+    <div class="examples">
+      <label for="example">Or try an example</label>
+      <select id="example">
+        <option value="">Choose an example…</option>
+        <option value="windmill">Windmill: one more colour for a game</option>
+        <option value="lunenburg">Lunenburg: a site's CSS, colours from a watercolour</option>
+        <option value="dandelions">Dandelions: a meadow game's board</option>
+        <option value="okabe">Okabe–Ito, as in R's palette.colors()</option>
+        <option value="koppen">Köppen–Geiger map colours (Sink &amp; Brikowski 2025)</option>
+      </select>
+    </div>
   </form>
 
   <section class="outputs" aria-live="polite">
     <div class="panel" id="wheel-panel">
       <h2>Hue wheel</h2>
-      <div id="wheel" class="empty">Choose an example or enter a palette, then press Check.</div>
+      <div id="wheel" class="empty">Enter your colours, then press the button.</div>
     </div>
     <div class="panel hidden" id="css-panel">
-      <div class="css-head"><h2>Suggested colours</h2><button type="button" class="secondary" id="copy">Copy CSS</button></div>
+      <div class="css-head"><h2>Suggested colours</h2><div>
+        <button type="button" id="add-found">Add to my colours</button>
+        <button type="button" class="secondary" id="copy">Copy CSS</button></div></div>
       <pre id="css"></pre>
     </div>
     <div class="panel hidden" id="cvd-panel">
@@ -200,7 +238,7 @@ const EXAMPLES = {
 };
 
 const GLUE = `
-import json
+import json, re
 from perceptual_harmony import check, suggest, css_block, render_svg, render_cvd_svg
 from perceptual_harmony.css import css_colours, custom_properties, lookup
 from perceptual_harmony.cli import _spec, _patterns
@@ -223,12 +261,13 @@ def handle(s):
     cands = [_spec(l, props) for l in _lines(a.get('candidates'))]
     bg = lookup(a['background'], props) if a.get('background') else None
     kw = dict(space=a.get('space', 'oklch'), template=a.get('template') or None, background=bg)
-    css = ''
+    css, found = '', []
     if a.get('mode') == 'suggest':
         mc = float(a['mincontrast']) if a.get('mincontrast') else None
         if mc and not bg:
             raise ValueError('A minimum contrast needs a background colour.')
-        rep, found = suggest(palette, n=int(a.get('n') or 2), min_contrast=mc,
+        used = [int(m.group(1)) for m in (re.fullmatch(r'new-(\\d+)', p.split('=', 1)[0]) for p in palette) if m]
+        rep, found = suggest(palette, n=int(a.get('n') or 2), min_contrast=mc, start=max(used, default=0) + 1,
                              cvd_safe=bool(a.get('cvdsafe')), **kw)
         css = css_block(found)
         if not found:
@@ -238,7 +277,8 @@ def handle(s):
     rep.notes += notes
     return json.dumps({'text': rep.to_text(),
                        'wheel': render_svg(rep, layout='narrow' if a.get('narrow') else 'wide'),
-                       'cvd': render_cvd_svg(rep) if rep.cvd else '', 'css': css})
+                       'cvd': render_cvd_svg(rep) if rep.cvd else '', 'css': css,
+                       'found': [{'label': f.label, 'hex': f.hex, 'css': f.css} for f in found] if a.get('mode') == 'suggest' else []})
 `;
 
 const WORKER = `
@@ -280,27 +320,117 @@ function call(type, payload) {
 }
 
 function setStatus(text, error = false) { $('status').textContent = text; $('status').classList.toggle('error', error); }
-function setBusy(busy) { $('btn-check').disabled = busy; $('btn-suggest').disabled = busy; }
+function setBusy(busy) { $('btn-run').disabled = busy; $('add-found').disabled = busy; }
 function isCss(text) { return text.includes('--') && text.includes(':'); }
-function syncCss() { $('css-options').classList.toggle('hidden', !isCss($('palette').value)); }
 
-function readForm(mode) {
-  return { mode, palette: $('palette').value, candidates: mode === 'check' ? $('candidates').value : '',
-           exclude: $('exclude').value, background: $('background').value.trim(), space: $('space').value,
-           template: $('template').value, n: $('n').value, mincontrast: $('mincontrast').value,
-           cvdsafe: $('cvdsafe').checked, narrow: window.innerWidth < 860 };
+// ---- the two modes
+let mode = 'check';
+const HINTS = {
+  check: 'Is the palette harmonious? See your colours on the hue wheel, against the best-fitting template, with contrast and colour-vision checks.',
+  suggest: 'Get new colours that sit inside your palette’s template and stand apart from your colours. Add one, then ask again.',
+};
+function runLabel() {
+  return mode === 'check' ? 'Check palette' : (Number($('n').value) > 1 ? 'Suggest colours' : 'Suggest a colour');
+}
+function setMode(m) {
+  mode = m;
+  for (const t of ['check', 'suggest']) $('tab-' + t).setAttribute('aria-selected', String(t === m));
+  for (const el of document.querySelectorAll('[data-mode]')) el.classList.toggle('hidden', el.dataset.mode !== m);
+  $('mode-hint').textContent = HINTS[m];
+  $('btn-run').textContent = runLabel();
 }
 
-async function run(mode) {
+// ---- the colours in the box, as swatches
+function globRe(p) { return new RegExp('^' + p.replace(/^-+/, '').replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$'); }
+function parseColours(text) {
+  const out = [];
+  if (isCss(text)) {
+    const re = /--([\w-]+)\s*:\s*([^;}]+)/g, vals = {};
+    const ex = $('exclude').value.split(',').map(t => t.trim()).filter(Boolean).map(globRe);
+    let m;
+    while ((m = re.exec(text))) {
+      const name = m[1], raw = m[2].trim();
+      const value = raw.replace(/var\(\s*--([\w-]+)\s*\)/g, (_, n) => vals[n] || _);
+      if (!(name in vals)) vals[name] = value;
+      out.push({ name, value, start: m.index, end: re.lastIndex, excluded: ex.some(r => r.test(name)) });
+    }
+  } else {
+    text.split('\n').forEach((line, i) => {
+      const t = line.trim();
+      if (!t || t.startsWith('#!')) return;
+      const k = t.indexOf('=');
+      out.push({ name: k > 0 ? t.slice(0, k).trim() : '', value: (k > 0 ? t.slice(k + 1) : t).trim(), line: i });
+    });
+  }
+  return out.filter(c => CSS.supports('color', c.value));
+}
+function removeColour(c) {
+  let text = $('palette').value;
+  if (c.line !== undefined) {
+    const lines = text.split('\n'); lines.splice(c.line, 1); text = lines.join('\n');
+  } else {
+    let stop = text[c.end] === ';' ? c.end + 1 : c.end;
+    const ls = text.lastIndexOf('\n', c.start - 1) + 1;
+    let le = text.indexOf('\n', stop); if (le < 0) le = text.length;
+    if (!text.slice(ls, c.start).trim() && !text.slice(stop, le).trim()) text = text.slice(0, ls) + text.slice(Math.min(le + 1, text.length));
+    else text = text.slice(0, c.start) + text.slice(stop);
+  }
+  $('palette').value = text; syncPalette();
+}
+function syncPalette() {
+  const text = $('palette').value;
+  $('css-options').classList.toggle('hidden', !isCss(text));
+  const box = $('swatches'); box.textContent = '';
+  for (const c of parseColours(text)) {
+    const el = document.createElement('span');
+    el.className = 'swatch' + (c.excluded ? ' excluded' : '');
+    el.title = (c.name ? c.name + ': ' : '') + c.value + (c.excluded ? ' (left out)' : '');
+    const dot = document.createElement('i'); dot.style.background = c.value;
+    const label = document.createElement('span'); label.textContent = c.name || c.value;
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '×';
+    x.setAttribute('aria-label', 'Remove ' + (c.name || c.value));
+    x.addEventListener('click', () => removeColour(c));
+    el.append(dot, label, x); box.append(el);
+  }
+}
+function uniqueName(prefix) {
+  const names = new Set(parseColours($('palette').value).map(c => c.name));
+  let k = 1; while (names.has(prefix + '-' + k)) k++;
+  return prefix + '-' + k;
+}
+function addColour(name, value, cssValue) {
+  let text = $('palette').value.replace(/\s+$/, '');
+  if (isCss(text)) {
+    const decl = `  --${name || uniqueName('colour')}: ${cssValue || value};`;
+    const close = text.lastIndexOf('}');
+    text = close < 0 ? text + '\n' + decl : text.slice(0, close).replace(/\s+$/, '') + '\n' + decl + '\n' + text.slice(close);
+  } else {
+    const line = name ? `${name}=${value}` : value;
+    text = text ? text + '\n' + line : line;
+  }
+  $('palette').value = text; syncPalette();
+}
+
+function readForm(m) {
+  return { mode: m, palette: $('palette').value, candidates: m === 'check' ? $('candidates').value : '',
+           exclude: $('exclude').value, background: $('background').value.trim(), space: $('space').value,
+           template: $('template').value, n: $('n').value, mincontrast: m === 'suggest' ? $('mincontrast').value : '',
+           cvdsafe: m === 'suggest' && $('cvdsafe').checked, narrow: window.innerWidth < 860 };
+}
+
+let lastFound = [];
+async function run(m) {
   setBusy(true);
-  setStatus(mode === 'suggest' ? 'Searching for colours… (a few seconds each)' : 'Checking…');
+  setStatus(m === 'suggest' ? 'Searching for colours… (a few seconds each)' : 'Checking…');
   try {
-    const r = await call('run', readForm(mode));
+    const r = await call('run', readForm(m));
     $('wheel').classList.remove('empty'); $('wheel').classList.add('figure');
     $('wheel').innerHTML = r.wheel;
     $('report').textContent = r.text; $('report-panel').classList.remove('hidden');
     $('cvd').innerHTML = r.cvd; $('cvd-panel').classList.toggle('hidden', !r.cvd);
     $('css').textContent = r.css; $('css-panel').classList.toggle('hidden', !r.css);
+    lastFound = r.found || [];
+    $('add-found').classList.toggle('hidden', !lastFound.length);
     setStatus('');
   } catch (err) {
     setStatus(err.message, true);
@@ -309,24 +439,38 @@ async function run(mode) {
   }
 }
 
-$('form').addEventListener('submit', (e) => { e.preventDefault(); run('check'); });
-$('btn-suggest').addEventListener('click', () => run('suggest'));
-$('palette').addEventListener('input', syncCss);
+$('tab-check').addEventListener('click', () => setMode('check'));
+$('tab-suggest').addEventListener('click', () => setMode('suggest'));
+$('n').addEventListener('input', () => { $('btn-run').textContent = runLabel(); });
+$('form').addEventListener('submit', (e) => { e.preventDefault(); run(mode); });
+$('palette').addEventListener('input', syncPalette);
+$('exclude').addEventListener('input', syncPalette);
+$('add-colour').addEventListener('click', () => addColour('', $('picker').value));
+$('add-found').addEventListener('click', () => {
+  const taken = new Set(parseColours($('palette').value).map(c => c.name));
+  for (const f of lastFound) addColour(taken.has(f.label) ? uniqueName('new') : f.label, f.hex, f.css);
+  lastFound = []; $('add-found').classList.add('hidden');
+  setStatus('Added to your colours. Check the palette, or suggest another.');
+});
 $('example').addEventListener('change', () => {
   const ex = EXAMPLES[$('example').value];
   if (!ex) return;
   for (const k of ['palette', 'candidates', 'exclude', 'background', 'mincontrast']) $(k).value = ex[k] || '';
-  syncCss();
-  if (!$('btn-check').disabled) run('check');
+  syncPalette();
+  setMode('check');
+  if (!$('btn-run').disabled) run('check');
 });
 $('copy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('css').textContent); $('copy').textContent = 'Copied'; }
   catch { $('copy').textContent = 'Select and copy'; }
   setTimeout(() => { $('copy').textContent = 'Copy CSS'; }, 1500);
 });
+const params = new URLSearchParams(location.search);
+setMode(params.get('mode') === 'suggest' ? 'suggest' : 'check');
+syncPalette();
 
 call('init', { bundleUrl: BUNDLE, glue: GLUE })
-  .then(() => { setBusy(false); setStatus('Ready.'); const p = new URLSearchParams(location.search).get('example');
+  .then(() => { setBusy(false); setStatus('Ready.'); const p = params.get('example');
                 if (p && EXAMPLES[p]) { $('example').value = p; $('example').dispatchEvent(new Event('change')); } })
   .catch((err) => setStatus('Could not load Python in the browser: ' + err.message, true));
 </script>

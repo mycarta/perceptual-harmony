@@ -37,10 +37,18 @@ outside a template, or borderline, may still be the right choice. The designer's
 
 ## Web page
 
-[`docs/index.html`](docs/index.html) runs the same package in the browser, with
-[Pyodide](https://pyodide.org). Paste colours or a CSS `:root` block, then check the palette or ask
-for suggestions. It shows the hue wheel, the colour-vision swatches, the full report and the
-suggestions as CSS. Nothing leaves the browser; the first visit downloads about 14 MB.
+Try it in your browser: **<https://mycarta.github.io/perceptual-harmony/>**
+
+The page, [`docs/index.html`](docs/index.html), runs the same package in the browser, with
+[Pyodide](https://pyodide.org). Type or paste your colours (any CSS colour, one per line, or a CSS
+`:root` block), or add them with the colour picker. Then choose:
+
+- **Check my palette**: the hue wheel with the best-fitting template, the colour-vision swatches
+  and the full report.
+- **Suggest next colour**: new colours inside the palette's template, as CSS. "Add to my colours"
+  puts a suggestion in the palette, so you can check it or ask for the next one.
+
+Nothing leaves the browser; the first visit downloads about 14 MB.
 
 To try it locally, serve the folder, since browsers do not load the package from a `file://`
 page:

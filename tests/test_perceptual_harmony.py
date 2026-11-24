@@ -295,6 +295,12 @@ def test_cvd_safe_suggestions():
 
 
 # ---- suggestions ------------------------------------------------------------------------------
+def test_suggestion_labels_start_where_asked():
+    from perceptual_harmony import suggest
+    _, found = suggest(WINDMILL, n=2, start=3, robustness_spaces=(), cvd=False)
+    assert [f.label for f in found] == ['new-3', 'new-4']
+
+
 def test_suggestions_are_inside_distinct_and_meet_contrast():
     from perceptual_harmony import suggest
     report, found = suggest(WINDMILL, n=2, background='#1a2e3d', min_contrast=4.5)

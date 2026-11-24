@@ -56,7 +56,7 @@ def suggest(palette: Iterable[ColourSpec], n: int = 3, space='oklch', template=N
             robustness_spaces: Sequence = ROBUSTNESS_SPACES,
             neutral_chroma: Optional[float] = None,
             prefix: str = 'new', cvd_safe: bool = False, cvd: bool = True,
-            cvd_threshold: Optional[float] = None) -> Tuple[Report, List[Suggestion]]:
+            cvd_threshold: Optional[float] = None, start: int = 1) -> Tuple[Report, List[Suggestion]]:
     """Suggest up to `n` colours for `palette`; returns (report, suggestions).
 
     The report is a `check` of the palette with the suggestions as candidates, so it carries
@@ -68,6 +68,7 @@ def suggest(palette: Iterable[ColourSpec], n: int = 3, space='oklch', template=N
     cvd_safe: also require each suggestion to stay at least `cvd_threshold` (in the primary
         space; default three times its rough JND) from every palette colour and earlier
         suggestion under simulated protanopia, deuteranopia and tritanopia.
+    start: number in the first suggestion's label (prefix-start, prefix-start+1, ...).
     """
     palette = list(palette)
     base = check(palette, space=space, template=template, rotation=rotation, background=background,
@@ -134,7 +135,7 @@ def suggest(palette: Iterable[ColourSpec], n: int = 3, space='oklch', template=N
             break
         L, C, h, lab, rgb = pick
         d = min(math.dist(lab, t) for t in taken)
-        out.append(Suggestion(f'{prefix}-{k + 1}', to_hex(rgb), L, C, h, d))
+        out.append(Suggestion(f'{prefix}-{start + k}', to_hex(rgb), L, C, h, d))
         taken.append(lab)
         for k in CVD_TYPES:
             sim_taken[k].append(simulate(rgb, k))
