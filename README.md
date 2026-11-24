@@ -58,8 +58,9 @@ python3 -m http.server --directory docs
 ```
 
 then open <http://localhost:8000>. Adding `?example=windmill` (or `lunenburg`, `dandelions`,
-`okabe`, `koppen`) loads an example. After changing the package, run `python docs/build_bundle.py`
-to update the copy the page loads; the test suite checks that it is current.
+`okabe`, `koppen`) loads a check example, and `?example=windmill-next` or `one-colour` a
+suggestion example. After changing the package, run `python docs/build_bundle.py` to update the
+copy the page loads; the test suite checks that it is current.
 
 ## Install
 

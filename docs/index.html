@@ -165,14 +165,7 @@ footer p { margin: 4px 0; max-width: 820px; }
 
     <div class="examples">
       <label for="example">Or try an example</label>
-      <select id="example">
-        <option value="">Choose an example…</option>
-        <option value="windmill">Windmill: one more colour for a game</option>
-        <option value="lunenburg">Lunenburg: a site's CSS, colours from a watercolour</option>
-        <option value="dandelions">Dandelions: a meadow game's board</option>
-        <option value="okabe">Okabe–Ito, as in R's palette.colors()</option>
-        <option value="koppen">Köppen–Geiger map colours (Sink &amp; Brikowski 2025)</option>
-      </select>
+      <select id="example"></select>
     </div>
   </form>
 
@@ -209,7 +202,20 @@ footer p { margin: 4px 0; max-width: 820px; }
 const PYODIDE = 'https://cdn.jsdelivr.net/npm/pyodide@0.26.4/';
 const BUNDLE = new URL('perceptual_harmony.json', document.baseURI).href;
 
+// each example belongs to one tab; the dropdown lists the current tab's examples
+const EXAMPLE_LIST = [
+  ['windmill', 'check', 'Windmill: one more colour for a game'],
+  ['lunenburg', 'check', 'Lunenburg: a site\u2019s CSS, colours from a watercolour'],
+  ['dandelions', 'check', 'Dandelions: a meadow game\u2019s board'],
+  ['okabe', 'check', 'Okabe\u2013Ito, as in R\u2019s palette.colors()'],
+  ['koppen', 'check', 'K\u00f6ppen\u2013Geiger map colours (Sink & Brikowski 2025)'],
+  ['windmill-next', 'suggest', 'Windmill: a colour for the compass'],
+  ['one-colour', 'suggest', 'Start from one colour and the X template'],
+];
 const EXAMPLES = {
+  'windmill-next': { palette: 'board blue=#30859e\npale label=#c5d9e8\ngold=#f5e642\nhit red=#ef9a9a',
+                     background: '#1a2e3d', mincontrast: '4.5', n: '2' },
+  'one-colour': { palette: 'board blue=#30859e', template: 'X', n: '4' },
   windmill: { palette: 'board blue=#30859e\npale label=#c5d9e8\ngold=#f5e642\nhit red=#ef9a9a',
               candidates: 'periwinkle=#94a0f0\ncyan=#60ccdb', background: '#1a2e3d', mincontrast: '4.5' },
   lunenburg: { palette: `:root {
@@ -338,7 +344,13 @@ function setMode(m) {
   for (const el of document.querySelectorAll('[data-mode]')) el.classList.toggle('hidden', el.dataset.mode !== m);
   $('mode-hint').textContent = HINTS[m];
   $('btn-run').textContent = runLabel();
+  const sel = $('example'), keep = sel.value;
+  sel.textContent = '';
+  sel.append(new Option('Choose an example\u2026', ''));
+  for (const [key, em, label] of EXAMPLE_LIST) if (em === m) sel.append(new Option(label, key));
+  sel.value = EXAMPLE_LIST.some(([k, em]) => k === keep && em === m) ? keep : '';
 }
+function exampleMode(key) { const e = EXAMPLE_LIST.find(([k]) => k === key); return e ? e[1] : null; }
 
 // ---- the colours in the box, as swatches
 function globRe(p) { return new RegExp('^' + p.replace(/^-+/, '').replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$'); }
@@ -452,14 +464,19 @@ $('add-found').addEventListener('click', () => {
   lastFound = []; $('add-found').classList.add('hidden');
   setStatus('Added to your colours. Check the palette, or suggest another.');
 });
-$('example').addEventListener('change', () => {
-  const ex = EXAMPLES[$('example').value];
-  if (!ex) return;
-  for (const k of ['palette', 'candidates', 'exclude', 'background', 'mincontrast']) $(k).value = ex[k] || '';
+function loadExample(key) {
+  const ex = EXAMPLES[key], m = exampleMode(key);
+  if (!ex || !m) return;
+  for (const k of ['palette', 'candidates', 'exclude', 'background', 'mincontrast', 'template']) $(k).value = ex[k] || '';
+  $('n').value = ex.n || '1';
+  $('cvdsafe').checked = false;
+  if (ex.template) $('more').open = true;
   syncPalette();
-  setMode('check');
-  if (!$('btn-run').disabled) run('check');
-});
+  setMode(m);
+  $('example').value = key;
+  if (!$('btn-run').disabled) run(m);
+}
+$('example').addEventListener('change', () => loadExample($('example').value));
 $('copy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('css').textContent); $('copy').textContent = 'Copied'; }
   catch { $('copy').textContent = 'Select and copy'; }
@@ -471,7 +488,7 @@ syncPalette();
 
 call('init', { bundleUrl: BUNDLE, glue: GLUE })
   .then(() => { setBusy(false); setStatus('Ready.'); const p = params.get('example');
-                if (p && EXAMPLES[p]) { $('example').value = p; $('example').dispatchEvent(new Event('change')); } })
+                if (p && EXAMPLES[p]) loadExample(p); })
   .catch((err) => setStatus('Could not load Python in the browser: ' + err.message, true));
 </script>
 </body>
