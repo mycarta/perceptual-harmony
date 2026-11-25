@@ -2,7 +2,7 @@
 overlay the "X" hue template of Cohen-Or et al. (2006), and compare candidate colours for one
 new role (the 8 added wind directions in Windmill's replay compass).
 
-This is the rough tool that picked periwinkle #94a0f0 for Windmill. Known limits (see HANDOFF.md):
+This is the rough tool that picked periwinkle #94a0f0 for Windmill. Known limits:
   - hue is HSL hue, which is not perceptual;
   - only the X template is drawn, placed by eye (centres 197 and 17 degrees), not fitted;
   - no lightness or contrast check beyond what was done separately by hand.
